@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-Programmierprojekt - Coding a neural network from Scratch
+Programmierprojekt - Coding a convolutional neural network from Scratch
 Autor: Lennart Brakelmann
 """
 
