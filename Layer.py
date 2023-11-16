@@ -14,19 +14,23 @@ from Activation import Activation
 class Dense:
 
     # Initialize Dense Layer
-    def __init__(self, n_inputs, n_neurons, ActivationFunction):
-        # Intialize Weights and Bias depending on Arguments
-        self.weights = 0.1 * np.random.randn(n_inputs, n_neurons)
-        self.bias = np.zeros((1, n_neurons))
+    def __init__(self, n_inputs, n_neurons, ActivationFunction, alpha=0.1):
+        #Initialize important attributes of layer
         self.ActivationFunction = ActivationFunction
         self.n_neurons = n_neurons
+        self.n_inputs = n_inputs
+        
+        # Intialize Weights and Bias depending on Arguments
+        self.weights = alpha * np.random.randn(n_neurons, n_inputs)
+        self.bias =  np.zeros((n_neurons, 1))
+        
         self.grads = []
         
 
     # Program forward path for Dense Layer
     def forward(self, A_prev):
         # Multiply Inputs with Weights, Make Sum and Add Bias
-        self.Z = np.dot(A_prev, self.weights) + self.bias
+        self.Z = np.dot(self.weights, A_prev) + self.bias
         self.activation_cache = self.Z.copy()
         self.A_prev = A_prev
         self.linear_cache = (A_prev, self.weights, self.bias)
@@ -40,7 +44,7 @@ class Dense:
                 self.A = tanh(self.Z)
             case 'Sigmoid':
                 self.A = Sigmoid(self.Z)
-            case 'SoftMax':
+            case 'Softmax':
                 self.A = Softmax(self.Z)
             case 'None':
                 self.A = self.Z
@@ -56,17 +60,17 @@ class Dense:
                 self.dZ = tanh_backward(dA, self.activation_cache)
             case 'Sigmoid':
                 self.dZ = Sigmoid_backward(dA, self.activation_cache)
-            case 'SoftMax':
-                self.dZ = Softmax_backward(dA, self.activation_cache)
+            case 'Softmax':
+                self.dZ = Softmax_backward(dA, self.A)
             case 'None':
                 self.dZ = dA
         
         
         #Calculate Gradients for Layer
-        m = self.A_prev.shape[0]
-        dW = 1/m * np.dot(self.dZ, self.A_prev)
+        m = self.A_prev.shape[1]
+        dW = 1/m * np.dot(self.dZ, self.A_prev.T)
         db = 1/m * np.sum(self.dZ, axis=1, keepdims=True)
-        dA_prev = np.dot(self.weights, self.dZ)
+        dA_prev = np.dot(self.weights.T, self.dZ)
         
         return dA_prev, dW, db
 
@@ -127,18 +131,9 @@ def ReLU(Z):
 def ReLU_backward(dA, cache):
     Z = cache
     s = np.where(Z <= 0, 0.0, 1.0)
-    dZ = dA * s * (1-s)
+    dZ = dA * s
     return dZ
     
-def Softmax(Z):
-    exp_values = np.exp(Z - np.max(Z, axis=1, keepdims=True))
-    probabilities = exp_values / np.sum(exp_values, axis=1, keepdims=True)
-    A = probabilities
-    return A
-
-def Softmax_backward(dA, cache):
-    pass
-
 def Leaky_ReLU(Z, alpha=0.1):
     A = np.where(Z > 0, Z, Z * alpha)
     return A
@@ -169,17 +164,20 @@ def tanh_backward(dA, cache):
     dZ = dA * (1.0-np.power(s,2))
     return dZ
     
-def SoftMaxFunction(Z):
-    exp_values = np.exp(Z - np.max(Z, axis=1, keepdims=True))
-    probabilities = exp_values / np.sum(exp_values, axis=1, keepdims=True)
+def Softmax(Z):
+    exp_values = np.exp(Z - np.max(Z, axis=0, keepdims=True))
+    probabilities = exp_values / np.sum(exp_values, axis=0, keepdims=True)
     A = probabilities
     return A
+
+def Softmax_backward(dA, A_pred):
+    #Calculate Derivative of Loss function w.r.t. Z
+    dZ = A_pred - dA
     
+    return dZ
 
     
 
-def initialize_weights(layer_dims, activations, method, alpha):
-    L = len(layer_dims)
 
 
 
