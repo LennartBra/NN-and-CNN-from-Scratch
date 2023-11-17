@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-Programmierprojekt - Coding a convolutional neural network from Scratch
+Programmierprojekt - Coding a neural network from Scratch
 Autor: Lennart Brakelmann
 """
 
@@ -42,7 +42,7 @@ NeuralNetwork.print_model_structure()
 y_true = np.array([0,0,1,1,0,1,1,0,1,1,0])
 #y_true = np.array([[0,1],[0,1],[1,0],[0,1],[1,0],[0,1],[1,0]]).T
 
-NeuralNetwork.train(X ,y_true ,learning_rate=0.01, loss_function='Binary Crossentropy',num_iterations = 1000, batch_size = 0)
+NeuralNetwork.train(X ,y_true ,learning_rate=0.01, loss_function='Binary Crossentropy',num_iterations = 1000, batch_size = 'None')
 acc = NeuralNetwork.accs
 cost = NeuralNetwork.costs
 
@@ -76,46 +76,6 @@ y_pred_test = NeuralNetwork.predict(X_Test)
 acc = calculate_accuracy(y_pred_test, y_true_Test)
 
 
-
-
-
-
-
-
-#%% Define Neural Network for Multiclass Classification
-np.random.seed(42)
-
-X = np.array([[-10,-8,-8],
-              [0.5,2.0,2],
-              [9,8,10],
-              [-10,-9,-12],
-              [-9.5,-8,-13],
-              [0.5,2,1],
-              [0,-1,-0.5],
-              [10,8,9.5],
-              [-8,-9.5,-8.3],
-              [-0.5,1.5,2],
-              [11,12,8],
-              [13,10,14]
-               ]).T
-
-y_true = np.array([0,1,2,0,0,1,1,2,0,1,2,2])
-
-
-#Create NeuralNetwork Object
-NeuralNetwork1 = Network()
-#Add Layers to Neural Network --> Define Network Structure
-NeuralNetwork1.add(Layer.Dense(3,5,'ReLU'))
-NeuralNetwork1.add(Layer.Dense(5,3,'Softmax'))
-#Initialize weights with He and Xavier Method
-NeuralNetwork1.he_xavier_weight_initialization()
-
-
-NeuralNetwork1.train(X, y_true, learning_rate=0.01, loss_function='Categorical Crossentropy', num_iterations = 500, batch_size = 0)
-acc = NeuralNetwork1.accs
-cost = NeuralNetwork1.costs
-
-
 #%% Neural Network - Iris dataset
 from sklearn import datasets
 
@@ -146,8 +106,8 @@ y_test = np.squeeze(y_test)
 #Create NeuralNetwork Object
 NeuralNetwork1 = Network()
 #Add Layers to Neural Network --> Define Network Structure
-NeuralNetwork1.add(Layer.Dense(4,1000,'ReLU'))
-NeuralNetwork1.add(Layer.Dense(1000,300,'ReLU'))
+NeuralNetwork1.add(Layer.Dense(4,500,'ReLU'))
+NeuralNetwork1.add(Layer.Dense(500,300,'ReLU'))
 #NeuralNetwork1.add(Layer.Dense(10,10,'tanh'))
 #NeuralNetwork1.add(Layer.Dense(10,5,'Leaky_ReLU'))
 NeuralNetwork1.add(Layer.Dense(300,3,'Softmax'))
@@ -159,15 +119,13 @@ NeuralNetwork1.print_model_structure()
 
 
 
-NeuralNetwork1.train(X ,y_true ,learning_rate=0.01, loss_function='Categorical Crossentropy',num_iterations = 7000, batch_size = 0)
+NeuralNetwork1.train(X ,y_true ,learning_rate=0.01, loss_function='Categorical Crossentropy',num_iterations = 2000, batch_size = 'None')
 acc = NeuralNetwork1.accs
 cost = NeuralNetwork1.costs
 
-#%%
-NeuralNetwork1.plot_cost()
-NeuralNetwork1.plot_acc()
+NeuralNetwork1.plot_cost_acc()
 
-#%% Test Neural Network on TestData --> Multiclass Classification
+#%% Test Neural Network on TestData --> Iris Dataset
 def calculate_accuracy(y_pred, y_true):
     y_pred = np.array(y_pred)
     y_true = np.array(y_true)
@@ -182,3 +140,48 @@ y_pred_test = NeuralNetwork1.predict(X_Test)
 acc = calculate_accuracy(y_pred_test, y_test)
 
 
+#%% Generate Spiral Dataset and test Neural Network
+from numpy import pi
+# import matplotlib.pyplot as plt
+
+N = 400
+theta = np.sqrt(np.random.rand(N))*2*pi # np.linspace(0,2*pi,100)
+
+r_a = 2*theta + pi
+data_a = np.array([np.cos(theta)*r_a, np.sin(theta)*r_a]).T
+x_a = data_a + np.random.randn(N,2)
+
+r_b = -2*theta - pi
+data_b = np.array([np.cos(theta)*r_b, np.sin(theta)*r_b]).T
+x_b = data_b + np.random.randn(N,2)
+
+res_a = np.append(x_a, np.zeros((N,1)), axis=1)
+res_b = np.append(x_b, np.ones((N,1)), axis=1)
+
+X_spiral = np.append(res_a, res_b, axis=0)
+np.random.shuffle(X_spiral)
+
+y_spiral = X_spiral[:,2]
+X_spiral = X_spiral[:,0:2]
+
+#Create NeuralNetwork Object
+SpiralDataNeuralNetwork = Network()
+#Add Layers to Neural Network --> Define Network Structure
+SpiralDataNeuralNetwork.add(Layer.Dense(2,50,'ReLU'))
+SpiralDataNeuralNetwork.add(Layer.Dense(50,16,'ReLU'))
+SpiralDataNeuralNetwork.add(Layer.Dense(16,8,'ReLU'))
+SpiralDataNeuralNetwork.add(Layer.Dense(8,4,'tanh'))
+SpiralDataNeuralNetwork.add(Layer.Dense(4,1,'Sigmoid'))
+#Initialize weights with He and Xavier Method
+SpiralDataNeuralNetwork.he_xavier_weight_initialization()
+
+#Print Neural Network Structure
+NeuralNetwork1.print_model_structure()
+
+
+SpiralDataNeuralNetwork.train(X_spiral.T ,y_spiral ,learning_rate=0.15, loss_function='Binary Crossentropy',num_iterations = 2500, batch_size = 0)
+acc = SpiralDataNeuralNetwork.accs
+cost = SpiralDataNeuralNetwork.costs
+
+SpiralDataNeuralNetwork.plot_cost()
+SpiralDataNeuralNetwork.plot_acc()
