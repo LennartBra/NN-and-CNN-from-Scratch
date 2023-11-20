@@ -40,15 +40,7 @@ class Network:
             
         
     
-    def backward_propagation(self, y_pred, y_true):
-        #Make One-Hot-encoded Vector
-        #y_onehot = make_onehot_vec(y_true,self.num_classes)
-        #First calculate Loss
-        Loss = self.calculate_Loss(y_pred, y_true, self.model_loss_function)
-        #print('Network Loss:')
-        #print (Loss)
-        #print(f'y_pred:{y_pred}')
-        
+    def backward_propagation(self, y_pred, y_true):        
         
         if self.model_loss_function == 'Categorical Crossentropy':
             dA = make_onehot_vec(y_true,self.num_classes)
@@ -72,13 +64,13 @@ class Network:
             layer.bias = layer.bias - self.learning_rate * layer.grads[1]            
             
 
-    def train(self ,X ,y_true, learning_rate, loss_function, num_iterations, batch_size):
+    def train(self ,X ,y_true, learning_rate, loss_function, num_iterations, batch_size='None'):
         self.learning_rate = learning_rate
         self.model_loss_function = loss_function
         self.costs = []
         self.accs = []
         self.x_plot = []
-        self.num_classes = int(max(y_true)) + 1
+        self.num_classes = int(max(y_true))
         
         if batch_size == 'None':
             for i in range(num_iterations):
@@ -104,6 +96,7 @@ class Network:
                 y_batches.append(y_true[batch_index[i]:batch_index[i+1]])
                 
             for i in range(num_iterations):
+                #Propagate through all batches
                 for b in range(len(X_batches)):
                     X_batch = X_batches[b]
                     y_true_batch = y_batches[b]
@@ -111,6 +104,7 @@ class Network:
                     y_pred_batch = self.layers[-1].A
                     self.backward_propagation(y_pred_batch, y_true_batch)
                     self.update_parameters()
+                #Every 10th iteration: Calculate Loss and Accuracy of Network
                 if i%10 == 0:
                     self.forward_propagation(X)
                     y_pred = self.layers[-1].A
@@ -120,10 +114,7 @@ class Network:
                     self.costs.append(Loss)
                     self.accs.append(acc)
                     self.x_plot.append(i)
-                    print(f'Epoch:{i}, Loss: {Loss}, Acc: {acc}')
-                
-            
-                
+                    print(f'Epoch:{i}, Loss: {Loss}, Acc: {acc}')    
             
     
     def predict(self,X):
@@ -144,7 +135,7 @@ class Network:
         plt.title('Accuracy and Cost Plot')
         plt.xlabel('Iteration')
         plt.ylabel('cost/acc')
-        plt.ylim([0, 1])
+        #plt.ylim([0, 1])
         plt.legend()
                     
     
@@ -153,6 +144,7 @@ class Network:
     def calculate_Loss(self,y_pred, y_true, costfunction):
         m = y_pred.shape[1]
         y_onehot = make_onehot_vec(y_true, self.num_classes)
+        
         if costfunction == 'Binary Crossentropy':
             if y_pred.shape[0] == 1:
                 loss = -1/m * np.sum(y_true*np.log(y_pred)+(1-y_true)*np.log(1-y_pred))
@@ -161,11 +153,19 @@ class Network:
         elif costfunction == 'Categorical Crossentropy':
             #Clip Values, so that 0 does not occur
             y_pred_clipped = np.clip(y_pred, 1e-7, 1-1e-7)
-            loss = 1/m * np.sum(-np.log(np.sum(y_pred_clipped*y_onehot,axis=0)))
-            
+            loss = 1/m * np.sum(-np.log(np.sum(y_pred_clipped*y_onehot,axis=0)))   
         elif costfunction == 'MSE':
             loss = 1/m * np.sum(np.square(np.subtract(y_true,y_pred)))
-            
+        
+        
+        cost_regularization = 0
+        for layer in self.layers:
+            if layer.reg_type == 'L2':
+                cost_regularization += layer.lambd/m * np.sum(np.square(layer.weights))
+            if layer.reg_type == 'L1':
+                cost_regularization += layer.lambd/m * np.sum(np.abs(layer.weights))
+        loss = loss + cost_regularization
+
         return loss
 
 def calculate_accuracy(y_pred, y_true):
@@ -180,7 +180,7 @@ def calculate_accuracy(y_pred, y_true):
        
 def make_onehot_vec(y_true, num_classes):
     L = int(len(y_true))
-    C = num_classes
+    C = num_classes + 1
     y_onehot = np.zeros((C,L))
     for i in range(0,L):
         y = int(y_true[i])

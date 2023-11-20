@@ -42,7 +42,7 @@ NeuralNetwork.print_model_structure()
 y_true = np.array([0,0,1,1,0,1,1,0,1,1,0])
 #y_true = np.array([[0,1],[0,1],[1,0],[0,1],[1,0],[0,1],[1,0]]).T
 
-NeuralNetwork.train(X ,y_true ,learning_rate=0.01, loss_function='Binary Crossentropy',num_iterations = 1000, batch_size = 'None')
+NeuralNetwork.train(X ,y_true ,learning_rate=0.1, loss_function='Binary Crossentropy',num_iterations = 100, batch_size = 'None')
 acc = NeuralNetwork.accs
 cost = NeuralNetwork.costs
 
@@ -78,7 +78,7 @@ acc = calculate_accuracy(y_pred_test, y_true_Test)
 
 #%% Neural Network - Iris dataset
 from sklearn import datasets
-
+np.random.seed(5)
 X, y = datasets.load_iris(return_X_y=True)
 X = X.T
 X1 = X[:,0:40]
@@ -107,7 +107,7 @@ y_test = np.squeeze(y_test)
 NeuralNetwork1 = Network()
 #Add Layers to Neural Network --> Define Network Structure
 NeuralNetwork1.add(Layer.Dense(4,500,'ReLU'))
-NeuralNetwork1.add(Layer.Dense(500,300,'ReLU'))
+NeuralNetwork1.add(Layer.Dense(500,300,'ReLU',L2Reg=0.2))
 #NeuralNetwork1.add(Layer.Dense(10,10,'tanh'))
 #NeuralNetwork1.add(Layer.Dense(10,5,'Leaky_ReLU'))
 NeuralNetwork1.add(Layer.Dense(300,3,'Softmax'))
@@ -119,7 +119,7 @@ NeuralNetwork1.print_model_structure()
 
 
 
-NeuralNetwork1.train(X ,y_true ,learning_rate=0.01, loss_function='Categorical Crossentropy',num_iterations = 2000, batch_size = 'None')
+NeuralNetwork1.train(X ,y_true ,learning_rate=0.01, loss_function='Categorical Crossentropy',num_iterations = 1000)
 acc = NeuralNetwork1.accs
 cost = NeuralNetwork1.costs
 
@@ -179,9 +179,12 @@ SpiralDataNeuralNetwork.he_xavier_weight_initialization()
 NeuralNetwork1.print_model_structure()
 
 
-SpiralDataNeuralNetwork.train(X_spiral.T ,y_spiral ,learning_rate=0.15, loss_function='Binary Crossentropy',num_iterations = 2500, batch_size = 0)
+SpiralDataNeuralNetwork.train(X_spiral.T ,y_spiral ,learning_rate=0.15, loss_function='Binary Crossentropy',num_iterations = 2500, batch_size = 'None')
 acc = SpiralDataNeuralNetwork.accs
 cost = SpiralDataNeuralNetwork.costs
 
-SpiralDataNeuralNetwork.plot_cost()
-SpiralDataNeuralNetwork.plot_acc()
+SpiralDataNeuralNetwork.plot_cost_acc()
+
+
+
+    

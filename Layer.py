@@ -6,7 +6,6 @@ Autor: Lennart Brakelmann
 
 # Import Packages
 import numpy as np
-from Activation import Activation
 
 # %% Define classes for the different layers
 
@@ -14,11 +13,21 @@ from Activation import Activation
 class Dense:
 
     # Initialize Dense Layer
-    def __init__(self, n_inputs, n_neurons, ActivationFunction, alpha=0.1):
+    def __init__(self, n_inputs, n_neurons, ActivationFunction, alpha=0.1, L1Reg=0, L2Reg=0, Droput_keep_prob=0):
         #Initialize important attributes of layer
         self.ActivationFunction = ActivationFunction
         self.n_neurons = n_neurons
         self.n_inputs = n_inputs
+        if L1Reg > 0:
+            self.lambd = L1Reg
+            self.reg_type = 'L1'
+        elif L2Reg > 0:
+            self.lambd = L2Reg
+            self.reg_type = 'L2'
+        else:
+            self.lambd = 0
+            self.reg_type = 'None'
+        self.keep_prob = Droput_keep_prob
         
         # Intialize Weights and Bias depending on Arguments
         self.weights = alpha * np.random.randn(n_neurons, n_inputs)
@@ -65,11 +74,19 @@ class Dense:
             case 'None':
                 self.dZ = dA
         
-        
         #Calculate Gradients for Layer
         m = self.A_prev.shape[1]
-        dW = 1/m * np.dot(self.dZ, self.A_prev.T)
+        
+        #Calculate dW depending on regularization params
+        if self.reg_type == 'L1':
+            dW = 1/m * np.dot(self.dZ, self.A_prev.T) + (self.lambd/m) * np.sign(self.weights)
+        elif self.reg_type == 'L2':
+            dW = 1/m * np.dot(self.dZ, self.A_prev.T) + ((2*self.lambd)/m) * self.weights
+        elif self.reg_type == 'None':
+            dW = 1/m * np.dot(self.dZ, self.A_prev.T)
+        #Calculate db 
         db = 1/m * np.sum(self.dZ, axis=1, keepdims=True)
+        #Calculate dA_prev
         dA_prev = np.dot(self.weights.T, self.dZ)
         
         return dA_prev, dW, db
@@ -110,16 +127,6 @@ class FullyConnected:
     def backward(self):
         pass
 
-
-class SoftMax:
-    def __init__(self):
-        pass 
-    
-    def forward(self):
-        pass
-
-    def backward(self):
-        pass
 
 
 
