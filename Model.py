@@ -5,7 +5,7 @@ Autor: Lennart Brakelmann
 """
 import numpy as np
 import matplotlib.pyplot as plt
-import math
+
 
 class Network:
     def __init__(self):
@@ -34,6 +34,13 @@ class Network:
     def forward_propagation(self, A_prev):
         for layer in self.layers:
             layer.forward(A_prev)
+            if layer.reg_type == 'Dropout':
+                A = layer.A.copy()
+                keep_prob = layer.keep_prob
+                D = np.random.rand(A.shape[0],A.shape[1])
+                A = A * D
+                layer.A = (1/keep_prob) * A
+                self.D = D
             #print(f'Z:{layer.Z}')
             #print(f'A:{layer.A}')
             A_prev = layer.A
@@ -52,6 +59,10 @@ class Network:
         dA_prev = dA
         for layer in reversed(self.layers):
             dA_prev, dW, db = layer.backward(dA_prev)
+            if layer.reg_type == 'Dropout':
+                D = layer.D
+                keep_prob = layer.keep_prob
+                dA_prev = (dA_prev * D) / keep_prob
             #print(f"dA_prev:{dA_prev}")
             #print(f"dW:{dW}")
             #print(f"db:{db}")
@@ -64,7 +75,7 @@ class Network:
             layer.bias = layer.bias - self.learning_rate * layer.grads[1]            
             
 
-    def train(self ,X ,y_true, learning_rate, loss_function, num_iterations, batch_size='None'):
+    def train(self ,X ,y_true, learning_rate, loss_function, epochs, batch_size='None'):
         self.learning_rate = learning_rate
         self.model_loss_function = loss_function
         self.costs = []
@@ -73,7 +84,7 @@ class Network:
         self.num_classes = int(max(y_true))
         
         if batch_size == 'None':
-            for i in range(num_iterations):
+            for i in range(epochs):
                 self.forward_propagation(X)
                 y_pred = self.layers[-1].A
                 self.backward_propagation(y_pred, y_true)
@@ -91,11 +102,12 @@ class Network:
             batch_index = np.append(batch_index,X.shape[1])
             X_batches = []
             y_batches = []
+            batch_dW = []
             for i in range(len(batch_index)-1):
                 X_batches.append(X[:,batch_index[i]:batch_index[i+1]])
                 y_batches.append(y_true[batch_index[i]:batch_index[i+1]])
                 
-            for i in range(num_iterations):
+            for i in range(epochs):
                 #Propagate through all batches
                 for b in range(len(X_batches)):
                     X_batch = X_batches[b]
@@ -103,6 +115,7 @@ class Network:
                     self.forward_propagation(X_batch)
                     y_pred_batch = self.layers[-1].A
                     self.backward_propagation(y_pred_batch, y_true_batch)
+                    
                     self.update_parameters()
                 #Every 10th iteration: Calculate Loss and Accuracy of Network
                 if i%10 == 0:

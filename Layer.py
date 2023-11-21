@@ -13,7 +13,7 @@ import numpy as np
 class Dense:
 
     # Initialize Dense Layer
-    def __init__(self, n_inputs, n_neurons, ActivationFunction, alpha=0.1, L1Reg=0, L2Reg=0, Droput_keep_prob=0):
+    def __init__(self, n_inputs, n_neurons, ActivationFunction, alpha=0.1, L1Reg=0, L2Reg=0, Dropout_keep_prob=0):
         #Initialize important attributes of layer
         self.ActivationFunction = ActivationFunction
         self.n_neurons = n_neurons
@@ -24,10 +24,14 @@ class Dense:
         elif L2Reg > 0:
             self.lambd = L2Reg
             self.reg_type = 'L2'
+        elif Dropout_keep_prob > 0:
+            self.keep_prob = Dropout_keep_prob
+            self.reg_type = 'Dropout'
+            self.D = 0
         else:
             self.lambd = 0
             self.reg_type = 'None'
-        self.keep_prob = Droput_keep_prob
+    
         
         # Intialize Weights and Bias depending on Arguments
         self.weights = alpha * np.random.randn(n_neurons, n_inputs)
@@ -82,7 +86,7 @@ class Dense:
             dW = 1/m * np.dot(self.dZ, self.A_prev.T) + (self.lambd/m) * np.sign(self.weights)
         elif self.reg_type == 'L2':
             dW = 1/m * np.dot(self.dZ, self.A_prev.T) + ((2*self.lambd)/m) * self.weights
-        elif self.reg_type == 'None':
+        elif self.reg_type == 'None' or 'Dropout':
             dW = 1/m * np.dot(self.dZ, self.A_prev.T)
         #Calculate db 
         db = 1/m * np.sum(self.dZ, axis=1, keepdims=True)

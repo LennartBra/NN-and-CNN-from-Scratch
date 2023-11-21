@@ -12,6 +12,17 @@ from Model import Network
 from Activation import Activation
 import matplotlib.pyplot as plt
 
+#Define Function to Standardize Data
+def standardize_data(X):
+    mu = np.mean(X, axis=1)
+    sigma = np.std(X, axis=1)
+    X_standardized = np.zeros((X.shape[0],X.shape[1]))
+    for i in range(X.shape[0]):
+        X_standardized[i,:] = (X[i,:] - mu[i]) / sigma[i]
+
+    return X_standardized, mu, sigma
+
+
 #%% Define Neural Network for Binary Classification
 np.random.seed(5)
 
@@ -42,7 +53,7 @@ NeuralNetwork.print_model_structure()
 y_true = np.array([0,0,1,1,0,1,1,0,1,1,0])
 #y_true = np.array([[0,1],[0,1],[1,0],[0,1],[1,0],[0,1],[1,0]]).T
 
-NeuralNetwork.train(X ,y_true ,learning_rate=0.1, loss_function='Binary Crossentropy',num_iterations = 100, batch_size = 'None')
+NeuralNetwork.train(X ,y_true ,learning_rate=0.1, loss_function='Binary Crossentropy',epochs = 100, batch_size = 'None')
 acc = NeuralNetwork.accs
 cost = NeuralNetwork.costs
 
@@ -107,7 +118,7 @@ y_test = np.squeeze(y_test)
 NeuralNetwork1 = Network()
 #Add Layers to Neural Network --> Define Network Structure
 NeuralNetwork1.add(Layer.Dense(4,500,'ReLU'))
-NeuralNetwork1.add(Layer.Dense(500,300,'ReLU',L2Reg=0.2))
+NeuralNetwork1.add(Layer.Dense(500,300,'ReLU'))
 #NeuralNetwork1.add(Layer.Dense(10,10,'tanh'))
 #NeuralNetwork1.add(Layer.Dense(10,5,'Leaky_ReLU'))
 NeuralNetwork1.add(Layer.Dense(300,3,'Softmax'))
@@ -119,7 +130,7 @@ NeuralNetwork1.print_model_structure()
 
 
 
-NeuralNetwork1.train(X ,y_true ,learning_rate=0.01, loss_function='Categorical Crossentropy',num_iterations = 1000)
+NeuralNetwork1.train(X ,y_true ,learning_rate=0.01, loss_function='Categorical Crossentropy',epochs = 1000)
 acc = NeuralNetwork1.accs
 cost = NeuralNetwork1.costs
 
@@ -169,7 +180,7 @@ SpiralDataNeuralNetwork = Network()
 #Add Layers to Neural Network --> Define Network Structure
 SpiralDataNeuralNetwork.add(Layer.Dense(2,50,'ReLU'))
 SpiralDataNeuralNetwork.add(Layer.Dense(50,16,'ReLU'))
-SpiralDataNeuralNetwork.add(Layer.Dense(16,8,'ReLU'))
+SpiralDataNeuralNetwork.add(Layer.Dense(16,8,'ReLU',))
 SpiralDataNeuralNetwork.add(Layer.Dense(8,4,'tanh'))
 SpiralDataNeuralNetwork.add(Layer.Dense(4,1,'Sigmoid'))
 #Initialize weights with He and Xavier Method
@@ -179,12 +190,20 @@ SpiralDataNeuralNetwork.he_xavier_weight_initialization()
 NeuralNetwork1.print_model_structure()
 
 
-SpiralDataNeuralNetwork.train(X_spiral.T ,y_spiral ,learning_rate=0.15, loss_function='Binary Crossentropy',num_iterations = 2500, batch_size = 'None')
+SpiralDataNeuralNetwork.train(X_spiral.T ,y_spiral ,learning_rate=0.15, loss_function='Binary Crossentropy',epochs = 2500, batch_size = 'None')
 acc = SpiralDataNeuralNetwork.accs
 cost = SpiralDataNeuralNetwork.costs
 
 SpiralDataNeuralNetwork.plot_cost_acc()
 
 
+
+#%%
+A = NeuralNetwork1.layers[1].A
+keep_prob = 0.7
+D = np.random.rand(A.shape[0],A.shape[1])
+D = D < keep_prob
+A = A * D
+A = (1/keep_prob) * A
 
     
