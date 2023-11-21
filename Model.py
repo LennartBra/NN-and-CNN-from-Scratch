@@ -70,18 +70,64 @@ class Network:
         
 
     def update_parameters(self):
-        for layer in self.layers:
-            layer.weights = layer.weights - self.learning_rate * layer.grads[0]
-            layer.bias = layer.bias - self.learning_rate * layer.grads[1]            
+        if self.optimizer == 'None':
+            for layer in self.layers:
+                #Update weights and bias with gradients dW and db
+                layer.weights = layer.weights - self.learning_rate * layer.grads[0]
+                layer.bias = layer.bias - self.learning_rate * layer.grads[1]    
+        elif self.optimizer == 'Momentum':
+            #Initialize Hyperparameter
+            beta1 = 0.9
+            for layer in self.layers:
+                #Update vdW and vdb
+                layer.vdW = beta1 * layer.vdW + (1-beta1) * layer.grads[0]
+                layer.vdb = beta1 * layer.vdb + (1-beta1) * layer.grads[1]
+                #Update Weights and Bias with vdW and vdb
+                layer.weights = layer.weights - self.learning_rate * layer.vdW
+                layer.bias = layer.bias - self.learning_rate * layer.vdb
+        elif self.optimizer == 'RMSprop':
+            #Initialize Hyperparameters
+            beta2 = 0.999
+            epsilon = 10**-7
+            for layer in self.layers:
+                #Update sdW and sdb
+                layer.sdW = beta2 * layer.sdW + (1-beta2) * (layer.grads[0]**2)
+                layer.sdb = beta2 * layer.sdb + (1-beta2) * (layer.grads[1]**2)
+                #Update weights and bias with dW, sdW and db, sdb
+                layer.weights = layer.weights - self.learning_rate * layer.grads[0]/(np.sqrt(layer.sdW)+epsilon)
+                layer.bias = layer.bias - self.learning_rate * layer.grads[1]/(np.sqrt(layer.sdb)+epsilon)
+        elif self.optimizer == 'Adam':
+            #Initialize Parameters
+            beta1 = 0.9
+            beta2 = 0.999
+            epsilon = 10**-7
+            for layer in self.layers:
+                #Update vdW, sdW, vdb and sdb
+                layer.vdW = beta1 * layer.vdW + (1-beta1) * layer.grads[0]
+                layer.vdb = beta1 * layer.vdb + (1-beta1) * layer.grads[1]
+                layer.sdW = beta2 * layer.sdW + (1-beta2) * (layer.grads[0]**2)
+                layer.sdb = beta2 * layer.sdb + (1-beta2) * (layer.grads[1]**2)
+                '''
+                #Apply Bias correction
+                layer.vdW = layer.vdW/(1-(beta1**self.t))
+                layer.vdb = layer.vdb/(1-(beta1**self.t))
+                layer.sdW = layer.sdW/(1-(beta2**self.t))
+                layer.sdb = layer.sdb/(1-(beta2**self.t))
+                '''
+                #Update weights and bias with vdW, sdW, vdb and sdb
+                layer.weights = layer.weights - self.learning_rate * (layer.vdW/(np.sqrt(layer.sdW)+epsilon))
+                layer.bias = layer.bias - self.learning_rate * (layer.vdb/(np.sqrt(layer.sdb)+epsilon))
             
 
-    def train(self ,X ,y_true, learning_rate, loss_function, epochs, batch_size='None'):
+    def train(self ,X ,y_true, learning_rate, loss_function, epochs, batch_size='None', optimizer='None'):
         self.learning_rate = learning_rate
         self.model_loss_function = loss_function
         self.costs = []
         self.accs = []
         self.x_plot = []
         self.num_classes = int(max(y_true))
+        self.optimizer = optimizer
+            
         
         if batch_size == 'None':
             for i in range(epochs):
@@ -103,6 +149,7 @@ class Network:
             X_batches = []
             y_batches = []
             batch_dW = []
+            batch_db = []
             for i in range(len(batch_index)-1):
                 X_batches.append(X[:,batch_index[i]:batch_index[i+1]])
                 y_batches.append(y_true[batch_index[i]:batch_index[i+1]])
@@ -115,7 +162,6 @@ class Network:
                     self.forward_propagation(X_batch)
                     y_pred_batch = self.layers[-1].A
                     self.backward_propagation(y_pred_batch, y_true_batch)
-                    
                     self.update_parameters()
                 #Every 10th iteration: Calculate Loss and Accuracy of Network
                 if i%10 == 0:
@@ -148,7 +194,7 @@ class Network:
         plt.title('Accuracy and Cost Plot')
         plt.xlabel('Iteration')
         plt.ylabel('cost/acc')
-        #plt.ylim([0, 1])
+        plt.ylim([0, 1.5])
         plt.legend()
                     
     

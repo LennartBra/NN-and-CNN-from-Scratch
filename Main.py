@@ -22,71 +22,6 @@ def standardize_data(X):
 
     return X_standardized, mu, sigma
 
-
-#%% Define Neural Network for Binary Classification
-np.random.seed(5)
-
-X = np.array([[1,2,3],
-              [0.5,2.0,2],
-              [9,8,10],
-              [5,7,8],
-              [-0.5,1.5,2],
-              [7,5.9,9.1],
-              [6,7,9],
-              [1,-0.5,1],
-              [10,1,8],
-              [8,6.8,9],
-              [0,-2,3]
-               ]).T
-
-#Create NeuralNetwork Object
-NeuralNetwork = Network()
-#Add Layers to Neural Network --> Define Network Structure
-NeuralNetwork.add(Layer.Dense(3,3,'ReLU'))
-NeuralNetwork.add(Layer.Dense(3,1,'Sigmoid'))
-#Initialize weights with He and Xavier Method
-NeuralNetwork.he_xavier_weight_initialization()
-
-#Print Neural Network Structure
-NeuralNetwork.print_model_structure()
-
-y_true = np.array([0,0,1,1,0,1,1,0,1,1,0])
-#y_true = np.array([[0,1],[0,1],[1,0],[0,1],[1,0],[0,1],[1,0]]).T
-
-NeuralNetwork.train(X ,y_true ,learning_rate=0.1, loss_function='Binary Crossentropy',epochs = 100, batch_size = 'None')
-acc = NeuralNetwork.accs
-cost = NeuralNetwork.costs
-
-
-#%% Test Neural Network on TestData --> Binary Classification
-def calculate_accuracy(y_pred, y_true):
-    y_pred = np.array(y_pred)
-    y_true = np.array(y_true)
-    
-    correct = np.sum(y_pred==y_true)
-    acc = correct/ len(y_true)
-    
-    return acc
-
-X_Test = np.array([[0.5,3,-1],
-              [-1,1.0,2],
-              [10,7.5,11],
-              [6,5,9],
-              [-0.2,2.5,1],
-              [7.5,6.9,7.1],
-              [4,8,11],
-              [0,0.5,-1],
-              [11,5,6],
-              [4,7,10],
-              [-0.1,-3,2]
-               ]).T
-y_true_Test = np.array([0,0,1,1,0,1,1,0,1,1,0])
-
-y_pred_test = NeuralNetwork.predict(X_Test)
-
-acc = calculate_accuracy(y_pred_test, y_true_Test)
-
-
 #%% Neural Network - Iris dataset
 from sklearn import datasets
 np.random.seed(5)
@@ -119,8 +54,6 @@ NeuralNetwork1 = Network()
 #Add Layers to Neural Network --> Define Network Structure
 NeuralNetwork1.add(Layer.Dense(4,500,'ReLU'))
 NeuralNetwork1.add(Layer.Dense(500,300,'ReLU'))
-#NeuralNetwork1.add(Layer.Dense(10,10,'tanh'))
-#NeuralNetwork1.add(Layer.Dense(10,5,'Leaky_ReLU'))
 NeuralNetwork1.add(Layer.Dense(300,3,'Softmax'))
 #Initialize weights with He and Xavier Method
 NeuralNetwork1.he_xavier_weight_initialization()
@@ -130,7 +63,7 @@ NeuralNetwork1.print_model_structure()
 
 
 
-NeuralNetwork1.train(X ,y_true ,learning_rate=0.01, loss_function='Categorical Crossentropy',epochs = 1000)
+NeuralNetwork1.train(X ,y_true ,learning_rate=0.01, loss_function='Categorical Crossentropy',epochs = 1000,batch_size = 64, optimizer = 'Adam')
 acc = NeuralNetwork1.accs
 cost = NeuralNetwork1.costs
 
@@ -189,21 +122,12 @@ SpiralDataNeuralNetwork.he_xavier_weight_initialization()
 #Print Neural Network Structure
 NeuralNetwork1.print_model_structure()
 
-
-SpiralDataNeuralNetwork.train(X_spiral.T ,y_spiral ,learning_rate=0.15, loss_function='Binary Crossentropy',epochs = 2500, batch_size = 'None')
+SpiralDataNeuralNetwork.train(X_spiral.T ,y_spiral ,learning_rate=0.01, loss_function='Binary Crossentropy',epochs = 1500, batch_size = 'None', optimizer='Adam')
 acc = SpiralDataNeuralNetwork.accs
 cost = SpiralDataNeuralNetwork.costs
 
 SpiralDataNeuralNetwork.plot_cost_acc()
 
 
-
-#%%
-A = NeuralNetwork1.layers[1].A
-keep_prob = 0.7
-D = np.random.rand(A.shape[0],A.shape[1])
-D = D < keep_prob
-A = A * D
-A = (1/keep_prob) * A
 
     

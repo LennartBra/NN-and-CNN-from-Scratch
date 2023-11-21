@@ -32,12 +32,17 @@ class Dense:
             self.lambd = 0
             self.reg_type = 'None'
     
-        
         # Intialize Weights and Bias depending on Arguments
         self.weights = alpha * np.random.randn(n_neurons, n_inputs)
         self.bias =  np.zeros((n_neurons, 1))
         
+        #Initialize gradients
         self.grads = []
+        self.vdW = 0
+        self.vdb = 0
+        self.sdW = 0
+        self.sdb = 0
+        
         
 
     # Program forward path for Dense Layer
