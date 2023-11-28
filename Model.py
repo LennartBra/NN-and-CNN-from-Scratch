@@ -16,7 +16,7 @@ class Network:
         
     def add(self,layer):
         self.layers.append(layer)
-        self.layer_dims.append(layer.n_neurons)
+        #self.layer_dims.append(layer.n_neurons)
     
     #He and Xavier Weight Initilization for layers with the following Activation Functions
     def he_xavier_weight_initialization(self):
@@ -205,10 +205,7 @@ class Network:
         y_onehot = make_onehot_vec(y_true, self.num_classes)
         
         if costfunction == 'Binary Crossentropy':
-            if y_pred.shape[0] == 1:
-                loss = -1/m * np.sum(y_true*np.log(y_pred)+(1-y_true)*np.log(1-y_pred))
-            elif y_pred.shape[0] > 1:
-                loss = -1/m * np.sum(y_true*np.log(y_pred[1,:])+(1-y_true)*np.log(1-y_pred[0,:]))
+            loss = -1/m * np.sum(y_true*np.log(y_pred)+(1-y_true)*np.log(1-y_pred))
         elif costfunction == 'Categorical Crossentropy':
             #Clip Values, so that 0 does not occur
             y_pred_clipped = np.clip(y_pred, 1e-7, 1-1e-7)

@@ -11,6 +11,8 @@ import Layer
 from Model import Network
 from Activation import Activation
 import matplotlib.pyplot as plt
+import math
+from PIL import Image
 
 #Define Function to Standardize Data
 def standardize_data(X):
@@ -120,7 +122,7 @@ SpiralDataNeuralNetwork.add(Layer.Dense(4,1,'Sigmoid'))
 SpiralDataNeuralNetwork.he_xavier_weight_initialization()
 
 #Print Neural Network Structure
-NeuralNetwork1.print_model_structure()
+SpiralDataNeuralNetwork.print_model_structure()
 
 SpiralDataNeuralNetwork.train(X_spiral.T ,y_spiral ,learning_rate=0.01, loss_function='Binary Crossentropy',epochs = 1500, batch_size = 'None', optimizer='Adam')
 acc = SpiralDataNeuralNetwork.accs
@@ -130,4 +132,66 @@ SpiralDataNeuralNetwork.plot_cost_acc()
 
 
 
-    
+#%% Test CNN Functions
+from PIL import Image, ImageOps
+image = Image.open("lena.png")
+image = np.array(image)
+
+#CNN = Network()
+#CNN.add(Layer.Convolutional(num_filters=4, kernel_size=(3,3,1), padding='same'))
+#CNN.add(Layer.Convolutional(num_filters=4, kernel_size=(3,3,1), padding='same'))
+
+CNN_Layer = Layer.Convolutional(num_filters=4, kernel_size=(3,3,1), padding='valid')
+Pooling_Layer = Layer.Pooling('Max Pooling', pool_size=2, stride=2)
+CNN_Layer2 = Layer.Convolutional(num_filters=2, kernel_size=(5,5,1), padding='valid')
+Pooling_Layer2 = Layer.Pooling('Max Pooling', pool_size=2, stride=2)
+CNN_Layer.forward(image)
+Ergebnis_CNN = CNN_Layer.A
+Pooling_Layer.forward(CNN_Layer.A)
+Ergebnis_Pooling = Pooling_Layer.A
+CNN_Layer2.forward(Pooling_Layer.A)
+Pooling_Layer2.forward(CNN_Layer2.A)
+
+
+def plot_two_images(img1, img2):
+    _, ax = plt.subplots(1,2, figsize=(6,6))
+    ax[0].imshow(img1, cmap='gray')
+    ax[1].imshow(img2, cmap='gray')
+Bild1 = Ergebnis_CNN[:,:,0]
+Bild2 = Ergebnis_CNN[:,:,1]
+Bild3 = Ergebnis_CNN[:,:,2]
+Bild4 = Ergebnis_CNN[:,:,3]
+plot_two_images(Bild1, Bild2)
+plot_two_images(Bild3, Bild4)
+
+Bild1 = Ergebnis_Pooling[:,:,0]
+Bild2 = Ergebnis_Pooling[:,:,1]
+Bild3 = Ergebnis_Pooling[:,:,2]
+Bild4 = Ergebnis_Pooling[:,:,3]
+plot_two_images(Bild1, Bild2)
+plot_two_images(Bild3, Bild4)
+
+
+#%% Do Pooling
+stride = 1
+pool_size = 2
+
+pools = []
+
+for i in np.arange(Bild1.shape[0], step=stride):
+    for j in np.arange(Bild1.shape[1], step=stride):
+        mat = Bild1[i:i+pool_size, j:j+pool_size]
+        if mat.shape == (pool_size,pool_size):
+            pools.append(mat)
+
+pools = np.array(pools)
+            
+num_pools = pools.shape[0]
+target_shape = (int(np.sqrt(num_pools)), int(np.sqrt(num_pools)))
+pooled = []
+for pool in pools:
+    pooled.append(np.max(pool))
+A = np.array(pooled).reshape(target_shape)
+
+
+        

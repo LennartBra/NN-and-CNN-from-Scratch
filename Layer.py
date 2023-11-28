@@ -104,23 +104,93 @@ class Dense:
         return self.weights
 
 
-class Pooling:
-    def __init__(self):
-        pass
+class Convolutional:
+    def __init__(self, num_filters, kernel_size, padding):
+            self.k_h, self.k_w, self.k_c = kernel_size
+            self.num_filters = num_filters
+            self.padding = padding
+            if kernel_size[2] == 1:
+                self.conv_filter = np.zeros((num_filters, kernel_size[0],kernel_size[1]))
+            elif kernel_size[2] > 1:
+                self.conv_filter = np.zeros((num_filters, kernel_size[0],kernel_size[1], kernel_size[2]))
+                
+            if self.k_h == 3:
+                self.conv_filter[0,:,:] = np.array([[-1,0,1],[-1,0,1],[-1,0,1]])
+                self.conv_filter[1,:,:] = np.array([[-1,-1,-1],[0,0,0],[1,1,1]])
+                self.conv_filter[2,:,:] = np.array([[0,-1,0],[-1,5,-1],[0,-1,0]])
+                self.conv_filter[3,:,:] = 1/16 * np.array([[1,2,1],[2,4,2],[1,2,1]])
+                
+            
+    def forward(self, image):
+        
+        def pad_image(image):
+            if self.padding == 'same':
+                self.padding_length = int(np.floor(self.k_h/2))
+                padded_array = np.pad(image,self.padding_length,mode='constant',constant_values=0)
+            elif self.padding == 'valid':
+                padded_array = image
+                self.padding_length = int(np.floor(self.k_h/2))
+            return padded_array
+        
+        def convolve_image(image):
+            convolved_image = np.zeros((image.shape[0],image.shape[1],self.num_filters))#,self.k_c))
+            #for c in range(k_c):
+            for n in range(self.num_filters):
+                for rows in range(self.padding_length,image.shape[0]-self.padding_length):
+                    print(rows)
+                    for columns in range(self.padding_length,image.shape[1]-self.padding_length):
+                        Quadrat = image[rows-self.padding_length:rows+self.padding_length+1,columns-self.padding_length:columns+self.padding_length+1]
+                        convolved_image[rows,columns,n] = np.sum(np.multiply(Quadrat,self.conv_filter[n,:,:]))#,c]))
+            convolved_image = convolved_image[self.padding_length:-self.padding_length,self.padding_length:-self.padding_length,:]
+            return convolved_image
 
-    def forward(self):
-        pass
+        padded_image = pad_image(image)
+        convolved_image = convolve_image(padded_image)
+        self.A = convolved_image
+        
+        return convolved_image
 
     def backward(self):
         pass
-
-
-class Convolutional:
-    def __init__(self):
-        pass
-
-    def forward(self):
-        pass
+    
+    
+class Pooling:
+    def __init__(self, mode: str, pool_size: int, stride: int):
+        self.mode = mode
+        self.pool_size = pool_size
+        self.stride = stride
+        
+    def forward(self, A_prev):
+        num_maps = A_prev.shape[2]
+        self.A = []
+        for p in range(num_maps):
+            pools = []
+            #Iterate through the whole A_prev with the given stride
+            for i in np.arange(A_prev.shape[0], step=self.stride):
+                for j in np.arange(A_prev.shape[1], step=self.stride):
+                    #Get every single matrix that has to be pooled
+                    mat = A_prev[i:i+self.pool_size, j:j+self.pool_size,p]
+                    #Append Matrix to pools if shape is correct
+                    if mat.shape == (self.pool_size,self.pool_size):
+                        pools.append(mat)
+            #Make Numpy array of list
+            pools = np.array(pools)
+            #Define target shape of pooled array
+            num_pools = pools.shape[0]
+            target_shape = (int(np.sqrt(num_pools)), int(np.sqrt(num_pools)))
+            pooled = []
+            #Apply Max or Avg Pooling to pools
+            if self.mode == 'Max Pooling':
+                for pool in pools:
+                    pooled.append(np.max(pool))
+            elif self.mode == 'Avg Pooling':
+                for pool in pools:
+                    pooled.append(np.mean(pool))
+            #Return pooled array as A
+            A = np.array(pooled).reshape(target_shape)
+            self.A.append(A)
+        self.A = np.array(self.A)
+        self.A = np.moveaxis(self.A,0,2)
 
     def backward(self):
         pass
