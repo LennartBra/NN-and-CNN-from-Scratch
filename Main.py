@@ -37,7 +37,9 @@ X_Test2 = X[:,90:100]
 X_Test3 = X[:,140:150]
 
 X = np.concatenate((X1,X2,X3),axis=1)
+X_standardized, _ ,_ = standardize_data(X)
 X_Test = np.concatenate((X_Test1,X_Test2,X_Test3),axis=1)
+X_Test_standardized = standardize_data(X_Test)
 
 y_true = np.ones((1,120))
 y_test = np.ones((1,30))
@@ -65,7 +67,7 @@ NeuralNetwork1.print_model_structure()
 
 
 
-NeuralNetwork1.train(X ,y_true ,learning_rate=0.01, loss_function='Categorical Crossentropy',epochs = 1000,batch_size = 64, optimizer = 'Adam')
+NeuralNetwork1.train(X_standardized ,y_true ,learning_rate=0.01, loss_function='Categorical Crossentropy',epochs = 1000,batch_size = 64, optimizer = 'Adam')
 acc = NeuralNetwork1.accs
 cost = NeuralNetwork1.costs
 
@@ -136,23 +138,37 @@ SpiralDataNeuralNetwork.plot_cost_acc()
 from PIL import Image, ImageOps
 image = Image.open("lena.png")
 image = np.array(image)
+image = np.expand_dims(image, axis=2)
 
-#CNN = Network()
-#CNN.add(Layer.Convolutional(num_filters=4, kernel_size=(3,3,1), padding='same'))
-#CNN.add(Layer.Convolutional(num_filters=4, kernel_size=(3,3,1), padding='same'))
+CNN = Network()
+CNN.add(Layer.Convolutional(num_filters=4, kernel_size=(3,3), padding='same', input_ch=1))
+CNN.add(Layer.Pooling('Max Pooling', pool_size=2, stride=2))
+CNN.add(Layer.Convolutional(num_filters=8, kernel_size=(3,3), padding='same', input_ch=4))
+CNN.add(Layer.Pooling('Max Pooling', pool_size=2, stride=2))
 
-CNN_Layer = Layer.Convolutional(num_filters=4, kernel_size=(3,3,1), padding='valid')
+CNN.forward_propagation(image)
+
+Ergebnis_CNN = CNN.layers[0].A
+Ergebnis_Pooling = CNN.layers[1].A
+
+'''
+CNN_Layer = Layer.Convolutional(num_filters=4, kernel_size=(3,3), padding='same', input_ch=1)
 Pooling_Layer = Layer.Pooling('Max Pooling', pool_size=2, stride=2)
-CNN_Layer2 = Layer.Convolutional(num_filters=2, kernel_size=(5,5,1), padding='valid')
+CNN_Layer2 = Layer.Convolutional(num_filters=8, kernel_size=(5,5), padding='same', input_ch=4)
 Pooling_Layer2 = Layer.Pooling('Max Pooling', pool_size=2, stride=2)
 CNN_Layer.forward(image)
 Ergebnis_CNN = CNN_Layer.A
+Padded_Image = CNN_Layer.padded_array
 Pooling_Layer.forward(CNN_Layer.A)
 Ergebnis_Pooling = Pooling_Layer.A
 CNN_Layer2.forward(Pooling_Layer.A)
+Padded_Image2 = CNN_Layer2.padded_array
+Ergebnis_CNN2 = CNN_Layer2.A
 Pooling_Layer2.forward(CNN_Layer2.A)
+'''
 
 
+#Plpt Results
 def plot_two_images(img1, img2):
     _, ax = plt.subplots(1,2, figsize=(6,6))
     ax[0].imshow(img1, cmap='gray')
@@ -172,26 +188,11 @@ plot_two_images(Bild1, Bild2)
 plot_two_images(Bild3, Bild4)
 
 
-#%% Do Pooling
-stride = 1
-pool_size = 2
-
-pools = []
-
-for i in np.arange(Bild1.shape[0], step=stride):
-    for j in np.arange(Bild1.shape[1], step=stride):
-        mat = Bild1[i:i+pool_size, j:j+pool_size]
-        if mat.shape == (pool_size,pool_size):
-            pools.append(mat)
-
-pools = np.array(pools)
-            
-num_pools = pools.shape[0]
-target_shape = (int(np.sqrt(num_pools)), int(np.sqrt(num_pools)))
-pooled = []
-for pool in pools:
-    pooled.append(np.max(pool))
-A = np.array(pooled).reshape(target_shape)
+#%% Program Convolution of image
+f = 0
+for i in range(0,5):
+    f = f + i
+    print(f)
 
 
         

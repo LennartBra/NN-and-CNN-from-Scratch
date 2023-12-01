@@ -105,50 +105,83 @@ class Dense:
 
 
 class Convolutional:
-    def __init__(self, num_filters, kernel_size, padding):
-            self.k_h, self.k_w, self.k_c = kernel_size
+    def __init__(self, num_filters, kernel_size, padding, input_ch):
+            self.kernel_size = kernel_size[0]
             self.num_filters = num_filters
             self.padding = padding
-            if kernel_size[2] == 1:
-                self.conv_filter = np.zeros((num_filters, kernel_size[0],kernel_size[1]))
-            elif kernel_size[2] > 1:
-                self.conv_filter = np.zeros((num_filters, kernel_size[0],kernel_size[1], kernel_size[2]))
-                
-            if self.k_h == 3:
-                self.conv_filter[0,:,:] = np.array([[-1,0,1],[-1,0,1],[-1,0,1]])
-                self.conv_filter[1,:,:] = np.array([[-1,-1,-1],[0,0,0],[1,1,1]])
-                self.conv_filter[2,:,:] = np.array([[0,-1,0],[-1,5,-1],[0,-1,0]])
-                self.conv_filter[3,:,:] = 1/16 * np.array([[1,2,1],[2,4,2],[1,2,1]])
+            self.conv_filter = 0.1 * np.random.rand(num_filters, kernel_size[0],kernel_size[1], input_ch)
+            self.reg_type = 'None'
+            
+            if input_ch == 1:
+                self.conv_filter[0,:,:,0] = np.array([[-1,0,1],[-1,0,1],[-1,0,1]])
+                self.conv_filter[1,:,:,0] = np.array([[-1,-1,-1],[0,0,0],[1,1,1]])
+                self.conv_filter[2,:,:,0] = np.array([[0,-1,0],[-1,5,-1],[0,-1,0]])
+                self.conv_filter[3,:,:,0] = 1/16 * np.array([[1,2,1],[2,4,2],[1,2,1]])
+            
+            if input_ch == 4:
+                self.conv_filter[0,:,:,0] = np.array([[-1,0,1],[-1,0,1],[-1,0,1]])
+                self.conv_filter[1,:,:,0] = np.array([[-1,-1,-1],[0,0,0],[1,1,1]])
+                self.conv_filter[2,:,:,0] = np.array([[0,-1,0],[-1,5,-1],[0,-1,0]])
+                self.conv_filter[3,:,:,0] = 1/16 * np.array([[1,2,1],[2,4,2],[1,2,1]])
+                self.conv_filter[4,:,:,0] = np.array([[-1,0,1],[-1,0,1],[-1,0,1]])
+                self.conv_filter[5,:,:,0] = np.array([[-1,-1,-1],[0,0,0],[1,1,1]])
+                self.conv_filter[6,:,:,0] = np.array([[0,-1,0],[-1,5,-1],[0,-1,0]])
+                self.conv_filter[7,:,:,0] = 1/16 * np.array([[1,2,1],[2,4,2],[1,2,1]])
                 
             
-    def forward(self, image):
+    def forward(self, image): 
         
         def pad_image(image):
             if self.padding == 'same':
-                self.padding_length = int(np.floor(self.k_h/2))
-                padded_array = np.pad(image,self.padding_length,mode='constant',constant_values=0)
-            elif self.padding == 'valid':
-                padded_array = image
-                self.padding_length = int(np.floor(self.k_h/2))
+                num_ch = image.shape[2]
+                padding_length = int(np.floor(self.kernel_size/2))
+                padded_array = np.zeros((image.shape[0]+2*padding_length,image.shape[1]+2*padding_length,num_ch))
+                for i in range(num_ch):
+                    padded_array[:,:,i] = np.pad(image[:,:,i], padding_length, mode='constant', constant_values=0)
+
             return padded_array
         
+        '''
         def convolve_image(image):
-            convolved_image = np.zeros((image.shape[0],image.shape[1],self.num_filters))#,self.k_c))
+            convolved_image = np.zeros((image.shape[0],image.shape[1],self.num_filters))#*image.shape[2]))
             #for c in range(k_c):
             for n in range(self.num_filters):
                 for rows in range(self.padding_length,image.shape[0]-self.padding_length):
                     print(rows)
                     for columns in range(self.padding_length,image.shape[1]-self.padding_length):
                         Quadrat = image[rows-self.padding_length:rows+self.padding_length+1,columns-self.padding_length:columns+self.padding_length+1]
-                        convolved_image[rows,columns,n] = np.sum(np.multiply(Quadrat,self.conv_filter[n,:,:]))#,c]))
+                        if len(Quadrat.shape) == 2:
+                            convolved_image[rows,columns,n] = np.sum(np.multiply(Quadrat,self.conv_filter[n,:,:]))#,c]))
+                        elif len(Quadrat.shape) > 2:
+                            convolved_image[rows,columns,n] = np.sum(np.multiply(Quadrat,self.conv_filter[n,:,:]))
             convolved_image = convolved_image[self.padding_length:-self.padding_length,self.padding_length:-self.padding_length,:]
             return convolved_image
+        '''
+        
+        def convolve(image, padded_image):
+            self.ch_num = image.shape[-1]
+
+            if self.padding == 'same':
+                feature_maps = np.zeros((image.shape[0],image.shape[1],self.num_filters))
+                for n in range(self.num_filters):
+                    print(n)
+                    conv_map = np.zeros((feature_maps.shape[0],feature_maps.shape[1]))
+                    for ch_num in range(self.ch_num):
+                        for rows in range(0,feature_maps.shape[0]):
+                            for columns in range(0,feature_maps.shape[1]):
+                                Quadrat = padded_image[rows:rows+self.kernel_size, columns:columns+self.kernel_size, ch_num]
+                                conv_map[rows,columns] = np.sum(np.multiply(Quadrat,self.conv_filter[n,:,:,ch_num]))
+                        conv_map += conv_map
+                    feature_maps[:,:,n] = conv_map
+            return feature_maps
 
         padded_image = pad_image(image)
-        convolved_image = convolve_image(padded_image)
-        self.A = convolved_image
+        feature_maps = convolve(image, padded_image)
         
-        return convolved_image
+        self.padded_array = padded_image
+        self.A = feature_maps
+    
+        return feature_maps
 
     def backward(self):
         pass
@@ -159,10 +192,22 @@ class Pooling:
         self.mode = mode
         self.pool_size = pool_size
         self.stride = stride
+        self.reg_type = 'None'
         
     def forward(self, A_prev):
+        
+        def ReLU_activation(feature_maps):
+            for map_num in range(feature_maps.shape[2]):
+                feature_map = feature_maps[:,:,map_num]
+                for i in range(feature_map.shape[0]):
+                    for j in range(feature_map.shape[1]):
+                        y = ReLU(feature_map[i,j])
+                        feature_maps[i,j,map_num] = y
+            return feature_maps
+        
         num_maps = A_prev.shape[2]
         self.A = []
+        feature_maps = []
         for p in range(num_maps):
             pools = []
             #Iterate through the whole A_prev with the given stride
@@ -188,9 +233,11 @@ class Pooling:
                     pooled.append(np.mean(pool))
             #Return pooled array as A
             A = np.array(pooled).reshape(target_shape)
-            self.A.append(A)
-        self.A = np.array(self.A)
-        self.A = np.moveaxis(self.A,0,2)
+            feature_maps.append(A)
+        feature_maps = np.array(feature_maps)
+        feature_maps = np.moveaxis(feature_maps,0,2)
+        
+        self.A = ReLU_activation(feature_maps)
 
     def backward(self):
         pass
@@ -206,8 +253,15 @@ class FullyConnected:
     def backward(self):
         pass
 
-
-
+class Flatten():
+    def __init__(self):
+        pass
+    
+    def forward(self):
+        pass
+    
+    def backward(self):
+        pass
 
 #%%Define all Activation Functions for forward and backward path
 def ReLU(Z):
