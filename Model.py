@@ -107,13 +107,6 @@ class Network:
                 layer.vdb = beta1 * layer.vdb + (1-beta1) * layer.grads[1]
                 layer.sdW = beta2 * layer.sdW + (1-beta2) * (layer.grads[0]**2)
                 layer.sdb = beta2 * layer.sdb + (1-beta2) * (layer.grads[1]**2)
-                '''
-                #Apply Bias correction
-                layer.vdW = layer.vdW/(1-(beta1**self.t))
-                layer.vdb = layer.vdb/(1-(beta1**self.t))
-                layer.sdW = layer.sdW/(1-(beta2**self.t))
-                layer.sdb = layer.sdb/(1-(beta2**self.t))
-                '''
                 #Update weights and bias with vdW, sdW, vdb and sdb
                 layer.weights = layer.weights - self.learning_rate * (layer.vdW/(np.sqrt(layer.sdW)+epsilon))
                 layer.bias = layer.bias - self.learning_rate * (layer.vdb/(np.sqrt(layer.sdb)+epsilon))

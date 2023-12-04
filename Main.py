@@ -67,7 +67,7 @@ NeuralNetwork1.print_model_structure()
 
 
 
-NeuralNetwork1.train(X_standardized ,y_true ,learning_rate=0.01, loss_function='Categorical Crossentropy',epochs = 1000,batch_size = 64, optimizer = 'Adam')
+NeuralNetwork1.train(X_standardized ,y_true ,learning_rate=0.01, loss_function='Categorical Crossentropy',epochs = 100,batch_size = 'None', optimizer = 'Adam')
 acc = NeuralNetwork1.accs
 cost = NeuralNetwork1.costs
 
@@ -142,14 +142,20 @@ image = np.expand_dims(image, axis=2)
 
 CNN = Network()
 CNN.add(Layer.Convolutional(num_filters=4, kernel_size=(3,3), padding='same', input_ch=1))
-CNN.add(Layer.Pooling('Max Pooling', pool_size=2, stride=2))
+CNN.add(Layer.Pooling('Max Pooling', pool_size=3, stride=2))
 CNN.add(Layer.Convolutional(num_filters=8, kernel_size=(3,3), padding='same', input_ch=4))
-CNN.add(Layer.Pooling('Max Pooling', pool_size=2, stride=2))
+CNN.add(Layer.Pooling('Max Pooling', pool_size=3, stride=2))
+CNN.add(Layer.FullyConnected(159048, 100, 'ReLU'))
+CNN.add(Layer.Dense(100,3,'Softmax'))
+
 
 CNN.forward_propagation(image)
 
 Ergebnis_CNN = CNN.layers[0].A
 Ergebnis_Pooling = CNN.layers[1].A
+Ergebnis_CNN2 = CNN.layers[2].A
+Ergebnis_Pooling2 = CNN.layers[3].A
+Flattened_Layer = CNN.layers[4].A
 
 '''
 CNN_Layer = Layer.Convolutional(num_filters=4, kernel_size=(3,3), padding='same', input_ch=1)
