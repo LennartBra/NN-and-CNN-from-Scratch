@@ -7,13 +7,12 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 
-class Network:
+class NeuralNetwork:
     def __init__(self):
         self.layers = []
         self.layer_dims = []
 
 
-        
     def add(self,layer):
         self.layers.append(layer)
         #self.layer_dims.append(layer.n_neurons)
@@ -167,8 +166,6 @@ class Network:
                     self.accs.append(acc)
                     self.x_plot.append(i)
                     print(f'Epoch:{i}, Loss: {Loss}, Acc: {acc}')    
-            
-    
     def predict(self,X):
         self.forward_propagation(X)
         A_pred = self.layers[-1].A
@@ -237,6 +234,199 @@ def make_onehot_vec(y_true, num_classes):
         
     return y_onehot
             
+
+
+
+
+
+
+
+
+
+
+class ConvolutionalNeuralNetwork:
+    def __init__(self):
+        self.layers = []
+        self.layer_dims = []
+
+
+        
+    def add(self,layer):
+        self.layers.append(layer)
+        #self.layer_dims.append(layer.n_neurons)
+        
+    def print_model_structure(self):
+        for layer in self.layers:
+            print(layer)
+    
+    def forward_propagation(self, A_prev):
+        for layer in self.layers:
+            layer.forward(A_prev)
+            
+            #print(f'Z:{layer.Z}')
+            #print(f'A:{layer.A}')
+            A_prev = layer.A
+            
+        
+    
+    def backward_propagation(self, y_pred, y_true):        
+        
+        if self.model_loss_function == 'Categorical Crossentropy':
+            #Define y_onehot for input image
+            y_true_onehot = np.zeros(self.num_classes)
+            y_true_onehot[y_true] = 1
+            dA = y_true_onehot
+        elif self.model_loss_function == 'Binary Crossentropy':
+            if y_pred.shape[0] == 1:
+                dA = - (np.divide(y_true, y_pred) - np.divide(1 - y_true, 1 - y_pred)) #-(y/a - (1-y)/(1-a))        
+        #print(f"Loss_dA:{dA}")
+        
+        dA_prev = dA
+        for layer in reversed(self.layers):
+            dA_prev, dW, db = layer.backward(dA_prev)
+            print(f"dA_prev:{dA_prev}")
+            print(f"dW:{dW}")
+            print(f"db:{db}")
+            layer.grads = [dW, db]
+        
+
+    def update_parameters(self):
+        if self.optimizer == 'None':
+            for layer in self.layers:
+                #Update weights and bias with gradients dW and db
+                layer.weights = layer.weights - self.learning_rate * layer.grads[0]
+                layer.bias = layer.bias - self.learning_rate * layer.grads[1]    
+        elif self.optimizer == 'Momentum':
+            #Initialize Hyperparameter
+            beta1 = 0.9
+            for layer in self.layers:
+                #Update vdW and vdb
+                layer.vdW = beta1 * layer.vdW + (1-beta1) * layer.grads[0]
+                layer.vdb = beta1 * layer.vdb + (1-beta1) * layer.grads[1]
+                #Update Weights and Bias with vdW and vdb
+                layer.weights = layer.weights - self.learning_rate * layer.vdW
+                layer.bias = layer.bias - self.learning_rate * layer.vdb
+        elif self.optimizer == 'RMSprop':
+            #Initialize Hyperparameters
+            beta2 = 0.999
+            epsilon = 10**-7
+            for layer in self.layers:
+                #Update sdW and sdb
+                layer.sdW = beta2 * layer.sdW + (1-beta2) * (layer.grads[0]**2)
+                layer.sdb = beta2 * layer.sdb + (1-beta2) * (layer.grads[1]**2)
+                #Update weights and bias with dW, sdW and db, sdb
+                layer.weights = layer.weights - self.learning_rate * layer.grads[0]/(np.sqrt(layer.sdW)+epsilon)
+                layer.bias = layer.bias - self.learning_rate * layer.grads[1]/(np.sqrt(layer.sdb)+epsilon)
+        elif self.optimizer == 'Adam':
+            #Initialize Parameters
+            beta1 = 0.9
+            beta2 = 0.999
+            epsilon = 10**-7
+            for layer in self.layers:
+                #Update vdW, sdW, vdb and sdb
+                layer.vdW = beta1 * layer.vdW + (1-beta1) * layer.grads[0]
+                layer.vdb = beta1 * layer.vdb + (1-beta1) * layer.grads[1]
+                layer.sdW = beta2 * layer.sdW + (1-beta2) * (layer.grads[0]**2)
+                layer.sdb = beta2 * layer.sdb + (1-beta2) * (layer.grads[1]**2)
+                #Update weights and bias with vdW, sdW, vdb and sdb
+                layer.weights = layer.weights - self.learning_rate * (layer.vdW/(np.sqrt(layer.sdW)+epsilon))
+                layer.bias = layer.bias - self.learning_rate * (layer.vdb/(np.sqrt(layer.sdb)+epsilon))
+            
+
+    def train(self ,X ,y_true, learning_rate, loss_function, epochs, batch_size='None', optimizer='None'):
+        self.learning_rate = learning_rate
+        self.model_loss_function = loss_function
+        self.costs = []
+        self.accs = []
+        self.x_plot = []
+        self.num_classes = 10#int(max(y_true))
+        self.num_samples = len(y_true)
+        self.optimizer = optimizer
+        self.y_onehot = make_onehot_vec(y_true, self.num_classes)
+        self.y_true = y_true
+            
+        if batch_size == 'None':
+            for i in range(epochs):
+                total_loss = 0
+                
+                for i in range(X.shape[0]):
+                    X_in = X[i,:,:,:]
+                    self.forward_propagation(X_in)
+                    y_pred = np.squeeze(self.layers[-1].A)
+                    y_in = y_true[i]
+                    loss = self.calculate_Loss(y_pred, y_in, self.model_loss_function)
+                    total_loss += loss
+                    self.backward_propagation(y_pred, y_in)
+                    #self.update_parameters()
+                print(f'Total Loss: {total_loss}')
+                '''    
+                self.costs.append(total_loss)
+                self.accs.append(acc)
+                self.x_plot.append(i)
+                print(f'Epoch:{i}, Loss: {loss}, Acc: {acc}')
+                '''
+        
+            
+    
+    def predict(self,X):
+        self.forward_propagation(X)
+        A_pred = self.layers[-1].A
+        if self.layers[-1].ActivationFunction == 'Sigmoid':
+            y_pred = np.zeros(A_pred.shape)
+            y_pred = np.where(A_pred > 0.5, 1, 0)
+        elif self.layers[-1].ActivationFunction == 'Softmax':
+            y_pred = np.argmax(A_pred, axis=0)
+        
+        return y_pred
+    
+    def plot_cost_acc(self):
+        plt.figure()
+        plt.plot(self.x_plot,self.costs, label='Cost')
+        plt.plot(self.x_plot,self.accs, label='Acc')
+        plt.title('Accuracy and Cost Plot')
+        plt.xlabel('Iteration')
+        plt.ylabel('cost/acc')
+        plt.ylim([0, 1.5])
+        plt.legend()
+                    
+    
+
+        
+    def calculate_Loss(self,y_pred, y_true, costfunction):
+        m = self.num_samples
+        y_true_onehot = np.zeros(self.num_classes)
+        y_true_onehot[y_true] = 1
+        
+        if costfunction == 'Categorical Crossentropy':
+            #Clip Values, so that 0 does not occur
+            y_pred_clipped = np.clip(y_pred, 1e-7, 1-1e-7)
+            loss = 1/m * -np.log(np.sum(y_pred_clipped*y_true_onehot,axis=0))
+            print(f'Loss:{loss}')
+        #elif costfunction == 'Binary Crossentropy':
+        #    loss = -1/m * np.sum(self.y_true[i]*np.log(y_pred)+(1-self.y_true[i])*np.log(1-y_pred))
+        
+
+        return loss
+
+def calculate_accuracy(y_pred, y_true):
+    y_pred = np.array(y_pred)
+    y_true = np.array(y_true)
+    
+    correct = np.sum(y_pred==y_true)
+    acc = correct/ len(y_true)
+    
+    return acc
+
+       
+def make_onehot_vec(y_true, num_classes):
+    L = int(len(y_true))
+    C = num_classes + 1
+    y_onehot = np.zeros((C,L))
+    for i in range(0,L):
+        y = int(y_true[i])
+        y_onehot[y,i] = 1
+        
+    return y_onehot
         
         
         

@@ -8,7 +8,7 @@ Autor: Lennart Brakelmann
 import numpy as np
 import matplotlib as plt
 import Layer
-from Model import Network
+from Model import NeuralNetwork, ConvolutionalNeuralNetwork
 from Activation import Activation
 import matplotlib.pyplot as plt
 import math
@@ -54,7 +54,7 @@ y_test = np.squeeze(y_test)
 
 
 #Create NeuralNetwork Object
-NeuralNetwork1 = Network()
+NeuralNetwork1 = NeuralNetwork()
 #Add Layers to Neural Network --> Define Network Structure
 NeuralNetwork1.add(Layer.Dense(4,500,'ReLU'))
 NeuralNetwork1.add(Layer.Dense(500,300,'ReLU'))
@@ -67,7 +67,7 @@ NeuralNetwork1.print_model_structure()
 
 
 
-NeuralNetwork1.train(X_standardized ,y_true ,learning_rate=0.01, loss_function='Categorical Crossentropy',epochs = 100,batch_size = 'None', optimizer = 'Adam')
+NeuralNetwork1.train(X_standardized ,y_true ,learning_rate=0.01, loss_function='Categorical Crossentropy',epochs = 100,batch_size = 32, optimizer = 'Adam')
 acc = NeuralNetwork1.accs
 cost = NeuralNetwork1.costs
 
@@ -113,7 +113,7 @@ y_spiral = X_spiral[:,2]
 X_spiral = X_spiral[:,0:2]
 
 #Create NeuralNetwork Object
-SpiralDataNeuralNetwork = Network()
+SpiralDataNeuralNetwork = NeuralNetwork()
 #Add Layers to Neural Network --> Define Network Structure
 SpiralDataNeuralNetwork.add(Layer.Dense(2,50,'ReLU'))
 SpiralDataNeuralNetwork.add(Layer.Dense(50,16,'ReLU'))
@@ -134,20 +134,64 @@ SpiralDataNeuralNetwork.plot_cost_acc()
 
 
 
-#%% Test CNN Functions
+#%% Test CNN on mnist dataset
+import tensorflow as tf
+(X_train, y_train), (X_test, y_test) = tf.keras.datasets.mnist.load_data()
+X1 = X_train[0,:,:]
+X2 = X_train[1,:,:]
+X = np.zeros((2,28,28,1))
+X[0,:,:,0] = X1
+X[1,:,:,0] = X2
+
+#Plot Results
+def plot_two_images(img1, img2):
+    _, ax = plt.subplots(1,2, figsize=(6,6))
+    ax[0].imshow(img1, cmap='gray')
+    ax[1].imshow(img2, cmap='gray')
+
+plot_two_images(X1, X2)
+X1 = np.expand_dims(X1, axis=2)
+X2 = np.expand_dims(X2, axis=2)
+
+CNN_mnist = ConvolutionalNeuralNetwork()
+CNN_mnist.add(Layer.Convolutional(num_filters=4, kernel_size=(3,3), padding='same', input_ch=1))
+CNN_mnist.add(Layer.Pooling('Max Pooling', pool_size=2, stride=2))
+CNN_mnist.add(Layer.FullyConnected(784, 10, 'Softmax'))
+
+CNN_mnist.train(X,y_train[0:2],learning_rate=0.01,loss_function='Categorical Crossentropy', epochs=1)
+
+Ergebnis_CNN_mnist = CNN_mnist.layers[0].A
+Ergebnis_Pooling_mnist = CNN_mnist.layers[1].A
+Ergebnis_flattened = CNN_mnist.layers[2].flattened_array
+Ergebnis_Softmax = CNN_mnist.layers[2].A
+
+plot_two_images(Ergebnis_CNN_mnist[:,:,0], Ergebnis_CNN_mnist[:,:,1])
+plot_two_images(Ergebnis_CNN_mnist[:,:,2],Ergebnis_CNN_mnist[:,:,3])
+plot_two_images(Ergebnis_Pooling_mnist[:,:,0], Ergebnis_Pooling_mnist[:,:,1])
+plot_two_images(Ergebnis_Pooling_mnist[:,:,2],Ergebnis_Pooling_mnist[:,:,3])
+
+
+#%% Test CNN on Lena image
+'''
+#Lena Image
 from PIL import Image, ImageOps
 image = Image.open("lena.png")
 image = np.array(image)
 image = np.expand_dims(image, axis=2)
 
-CNN = Network()
+CNN = ConvolutionalNeuralNetwork()
 CNN.add(Layer.Convolutional(num_filters=4, kernel_size=(3,3), padding='same', input_ch=1))
 CNN.add(Layer.Pooling('Max Pooling', pool_size=3, stride=2))
 CNN.add(Layer.Convolutional(num_filters=8, kernel_size=(3,3), padding='same', input_ch=4))
 CNN.add(Layer.Pooling('Max Pooling', pool_size=3, stride=2))
-CNN.add(Layer.FullyConnected(159048, 100, 'ReLU'))
+CNN.add(Layer.Convolutional(num_filters=16, kernel_size=(3,3), padding='same', input_ch=8))
+CNN.add(Layer.Pooling('Max Pooling', pool_size=3, stride=2))
+CNN.add(Layer.Convolutional(num_filters=32, kernel_size=(3,3), padding='same', input_ch=16))
+CNN.add(Layer.Pooling('Max Pooling', pool_size=3, stride=2))
+CNN.add(Layer.Convolutional(num_filters=64, kernel_size=(3,3), padding='same', input_ch=32))
+CNN.add(Layer.Pooling('Max Pooling', pool_size=3, stride=2))
+CNN.add(Layer.FullyConnected(16384, 100, 'ReLU'))
 CNN.add(Layer.Dense(100,3,'Softmax'))
-
 
 CNN.forward_propagation(image)
 
@@ -156,23 +200,6 @@ Ergebnis_Pooling = CNN.layers[1].A
 Ergebnis_CNN2 = CNN.layers[2].A
 Ergebnis_Pooling2 = CNN.layers[3].A
 Flattened_Layer = CNN.layers[4].A
-
-'''
-CNN_Layer = Layer.Convolutional(num_filters=4, kernel_size=(3,3), padding='same', input_ch=1)
-Pooling_Layer = Layer.Pooling('Max Pooling', pool_size=2, stride=2)
-CNN_Layer2 = Layer.Convolutional(num_filters=8, kernel_size=(5,5), padding='same', input_ch=4)
-Pooling_Layer2 = Layer.Pooling('Max Pooling', pool_size=2, stride=2)
-CNN_Layer.forward(image)
-Ergebnis_CNN = CNN_Layer.A
-Padded_Image = CNN_Layer.padded_array
-Pooling_Layer.forward(CNN_Layer.A)
-Ergebnis_Pooling = Pooling_Layer.A
-CNN_Layer2.forward(Pooling_Layer.A)
-Padded_Image2 = CNN_Layer2.padded_array
-Ergebnis_CNN2 = CNN_Layer2.A
-Pooling_Layer2.forward(CNN_Layer2.A)
-'''
-
 
 #Plpt Results
 def plot_two_images(img1, img2):
@@ -192,13 +219,8 @@ Bild3 = Ergebnis_Pooling[:,:,2]
 Bild4 = Ergebnis_Pooling[:,:,3]
 plot_two_images(Bild1, Bild2)
 plot_two_images(Bild3, Bild4)
+'''
+   
 
 
-#%% Program Convolution of image
-f = 0
-for i in range(0,5):
-    f = f + i
-    print(f)
 
-
-        

@@ -111,13 +111,13 @@ class Convolutional:
             self.padding = padding
             self.conv_filter = 0.1 * np.random.rand(num_filters, kernel_size[0],kernel_size[1], input_ch)
             self.reg_type = 'None'
-            
+        
             if input_ch == 1:
                 self.conv_filter[0,:,:,0] = np.array([[-1,0,1],[-1,0,1],[-1,0,1]])
                 self.conv_filter[1,:,:,0] = np.array([[-1,-1,-1],[0,0,0],[1,1,1]])
                 self.conv_filter[2,:,:,0] = np.array([[0,-1,0],[-1,5,-1],[0,-1,0]])
                 self.conv_filter[3,:,:,0] = 1/16 * np.array([[1,2,1],[2,4,2],[1,2,1]])
-            
+
             if input_ch == 4:
                 self.conv_filter[0,:,:,0] = np.array([[-1,0,1],[-1,0,1],[-1,0,1]])
                 self.conv_filter[1,:,:,0] = np.array([[-1,-1,-1],[0,0,0],[1,1,1]])
@@ -131,7 +131,7 @@ class Convolutional:
             
     def forward(self, image): 
         #Keep track of last input shape
-        self.last_input_shape = image.shape
+        self.A_prev = image
         
         #Function for image padding
         def pad_image(image):
@@ -273,6 +273,7 @@ class FullyConnected:
         
         #Flatten input array
         flattened_array = A_prev.flatten().reshape(1,-1)
+        self.flattened_array = flattened_array
         
         #Calculate Z
         self.Z = np.dot(self.weights, flattened_array.T) + self.bias
@@ -292,6 +293,7 @@ class FullyConnected:
                 self.A = Sigmoid(self.Z)
             case 'Softmax':
                 self.A = Softmax(self.Z)
+                self.A = np.squeeze(self.A)
             case 'None':
                 self.A = self.Z
 
@@ -308,16 +310,16 @@ class FullyConnected:
                 self.dZ = Sigmoid_backward(dA, self.activation_cache)
             case 'Softmax':
                 self.dZ = Softmax_backward(dA, self.A)
+                self.dZ = np.expand_dims(self.dZ, axis=1)
             case 'None':
                 self.dZ = dA
         
-        #Calculate Gradients for Layer
-        m = self.A_prev.shape[1]
-        
+        print(f'dZ Shape:{self.dZ.shape}')
+        print(f'A_prev Shape:{self.A_prev.shape}')
         #Calculate dW depending on regularization params
-        dW = 1/m * np.dot(self.dZ, self.A_prev.T)
+        dW = np.dot(self.dZ, self.A_prev.flatten().reshape(1,-1))
         #Calculate db 
-        db = 1/m * np.sum(self.dZ, axis=1, keepdims=True)
+        db = np.sum(self.dZ, axis=1, keepdims=True)
         #Calculate dA_prev
         dA_prev = np.dot(self.weights.T, self.dZ)
         dA_prev = dA_prev.reshape(self.A_prev.shape)
