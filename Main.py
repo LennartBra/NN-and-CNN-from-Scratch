@@ -26,32 +26,27 @@ def standardize_data(X):
 
 #%% Neural Network - Iris dataset
 from sklearn import datasets
-np.random.seed(5)
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import StandardScaler
+from sklearn.metrics import accuracy_score
+import tensorflow as tf
+from tensorflow.keras import layers
+from tensorflow.keras import Sequential
+import numpy as np
+
+#Import Dataset
 X, y = datasets.load_iris(return_X_y=True)
-X = X.T
-X1 = X[:,0:40]
-X2 = X[:,50:90] 
-X3 = X[:,100:140]
-X_Test1 = X[:,40:50]
-X_Test2 = X[:,90:100] 
-X_Test3 = X[:,140:150]
 
-X = np.concatenate((X1,X2,X3),axis=1)
-X_standardized, _ ,_ = standardize_data(X)
-X_Test = np.concatenate((X_Test1,X_Test2,X_Test3),axis=1)
-X_Test_standardized = standardize_data(X_Test)
+#Standardize Data
+scaler = StandardScaler()
+X_standardized = scaler.fit_transform(X)
 
-y_true = np.ones((1,120))
-y_test = np.ones((1,30))
-y_true[0,0:40] = 0
-y_true[0,40:80] = 1
-y_true[0,80:120] = 2
-y_test[0,0:10] = 0
-y_test[0,10:20] = 1
-y_test[0,20:30] = 2
-y_true = np.squeeze(y_true.T)
-y_test = np.squeeze(y_test)
+#Split into Train and Test dataset
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
 
+###############################################################################
+###############Create Neural Network with own class implementation#############
+###############################################################################
 
 #Create NeuralNetwork Object
 NeuralNetwork1 = NeuralNetwork()
@@ -65,13 +60,59 @@ NeuralNetwork1.he_xavier_weight_initialization()
 #Print Neural Network Structure
 NeuralNetwork1.print_model_structure()
 
-
-
-NeuralNetwork1.train(X_standardized ,y_true ,learning_rate=0.01, loss_function='Categorical Crossentropy',epochs = 100,batch_size = 32, optimizer = 'Adam')
+#Train Neural Network
+NeuralNetwork1.train(X_train.T, y_train ,learning_rate=0.01, loss_function='Categorical Crossentropy',epochs = 40,batch_size = 64, optimizer = 'Adam')
+#Pull Cost and Accuracy log
 acc = NeuralNetwork1.accs
 cost = NeuralNetwork1.costs
 
-NeuralNetwork1.plot_cost_acc()
+#Make prediction for test data
+y_pred_NN = NeuralNetwork1.predict(X_test.T)
+#Calculate accuracy for test data
+acc_NN = accuracy_score(y_test, y_pred_NN)
+
+#Plot accuracy and loss of Neural Network for training data
+NeuralNetwork1.plot_acc()
+NeuralNetwork1.plot_loss()
+
+
+###############################################################################
+#####################Create Neural Network with Keras library##################
+###############################################################################
+#One Hot Encode y_train
+y_train = tf.keras.utils.to_categorical(y_train)
+
+#Create Model for Neural Network
+model=Sequential()
+#Add Layers to Neural Network
+model.add(layers.Dense(500,input_dim=4,activation='relu', kernel_initializer='he_normal'))
+model.add(layers.Dense(300,activation='relu', kernel_initializer='he_normal'))
+model.add(layers.Dense(3,activation='softmax'))
+model.compile(optimizer=tf.keras.optimizers.Adam(learning_rate=0.01),loss='categorical_crossentropy', metrics=['accuracy'])
+
+#Train Model with training data
+history = model.fit(X_train, y_train, epochs=40, batch_size=64, verbose=1)
+
+#Make Prediction for test data
+y_pred_keras = np.argmax(model.predict(X_test), axis=1)
+#Calculate accuracy for test data
+acc_keras = accuracy_score(y_test, y_pred_keras)
+
+#Make accuracy plot 
+plt.plot(history.history[ 'accuracy' ])
+plt.title( 'Model Accuracy - Keras' )
+plt.ylabel( 'accuracy' )
+plt.xlabel( 'epoch' )
+plt.legend([ 'acc' ], loc= 'lower right' )
+plt.show()
+
+#Make loss plot
+plt.plot(history.history[ 'loss' ])
+plt.title( 'Model Loss - Keras' )
+plt.ylabel( 'loss' )
+plt.xlabel( 'epoch' )
+plt.legend([ 'loss' ], loc= 'upper left' )
+plt.show()
 
 #%% Test Neural Network on TestData --> Iris Dataset
 def calculate_accuracy(y_pred, y_true):
@@ -83,7 +124,7 @@ def calculate_accuracy(y_pred, y_true):
     
     return acc
 
-y_pred_test = NeuralNetwork1.predict(X_Test)
+y_pred_test = NeuralNetwork1.predict(X_test)
 
 acc = calculate_accuracy(y_pred_test, y_test)
 
@@ -130,18 +171,23 @@ SpiralDataNeuralNetwork.train(X_spiral.T ,y_spiral ,learning_rate=0.01, loss_fun
 acc = SpiralDataNeuralNetwork.accs
 cost = SpiralDataNeuralNetwork.costs
 
-SpiralDataNeuralNetwork.plot_cost_acc()
+SpiralDataNeuralNetwork.plot_acc()
+SpiralDataNeuralNetwork.plot_loss()
 
 
 
 #%% Test CNN on mnist dataset
 import tensorflow as tf
 (X_train, y_train), (X_test, y_test) = tf.keras.datasets.mnist.load_data()
-X1 = X_train[0,:,:]
-X2 = X_train[1,:,:]
-X = np.zeros((2,28,28,1))
-X[0,:,:,0] = X1
-X[1,:,:,0] = X2
+
+X_train = X_train / 255
+
+X = X_train[0:10,:,:]
+X = np.expand_dims(X, axis=3)
+
+
+X_train = np.expand_dims(X_train, axis=3)
+X_train = X_train[0:500]
 
 #Plot Results
 def plot_two_images(img1, img2):
@@ -149,18 +195,17 @@ def plot_two_images(img1, img2):
     ax[0].imshow(img1, cmap='gray')
     ax[1].imshow(img2, cmap='gray')
 
-plot_two_images(X1, X2)
-X1 = np.expand_dims(X1, axis=2)
-X2 = np.expand_dims(X2, axis=2)
 
 CNN_mnist = ConvolutionalNeuralNetwork()
 CNN_mnist.add(Layer.Convolutional(num_filters=4, kernel_size=(3,3), padding='same', input_ch=1))
 CNN_mnist.add(Layer.Pooling('Max Pooling', pool_size=2, stride=2))
 CNN_mnist.add(Layer.FullyConnected(784, 10, 'Softmax'))
+#CNN_mnist.add(Layer.FullyConnected(196, 10, 'Softmax'))
 
-CNN_mnist.train(X,y_train[0:2],learning_rate=0.01,loss_function='Categorical Crossentropy', epochs=1)
+CNN_mnist.train(X_train,y_train[0:500],learning_rate=0.01,loss_function='Categorical Crossentropy', epochs=10)
 
 Ergebnis_CNN_mnist = CNN_mnist.layers[0].A
+Ergebnis_padded_image = CNN_mnist.layers[0].padded_image
 Ergebnis_Pooling_mnist = CNN_mnist.layers[1].A
 Ergebnis_flattened = CNN_mnist.layers[2].flattened_array
 Ergebnis_Softmax = CNN_mnist.layers[2].A
@@ -169,6 +214,20 @@ plot_two_images(Ergebnis_CNN_mnist[:,:,0], Ergebnis_CNN_mnist[:,:,1])
 plot_two_images(Ergebnis_CNN_mnist[:,:,2],Ergebnis_CNN_mnist[:,:,3])
 plot_two_images(Ergebnis_Pooling_mnist[:,:,0], Ergebnis_Pooling_mnist[:,:,1])
 plot_two_images(Ergebnis_Pooling_mnist[:,:,2],Ergebnis_Pooling_mnist[:,:,3])
+
+#Take a lokk at gradients
+FLC_dW = CNN_mnist.layers[2].dW
+FLC_db = CNN_mnist.layers[2].db
+FLC_dA_prev = CNN_mnist.layers[2].dA_prev
+
+Pooling_Gradient = CNN_mnist.layers[1].A_gradient
+
+CL_dW = CNN_mnist.layers[0].dW
+Filter1 = CNN_mnist.layers[0].conv_filter[0,:,:,0]
+Filter2 = CNN_mnist.layers[0].conv_filter[1,:,:,0]
+Filter3 = CNN_mnist.layers[0].conv_filter[2,:,:,0]
+Filter4 = CNN_mnist.layers[0].conv_filter[3,:,:,0]
+
 
 
 #%% Test CNN on Lena image

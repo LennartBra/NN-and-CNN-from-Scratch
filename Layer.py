@@ -110,14 +110,15 @@ class Convolutional:
             self.num_filters = num_filters
             self.padding = padding
             self.conv_filter = 0.1 * np.random.rand(num_filters, kernel_size[0],kernel_size[1], input_ch)
-            self.reg_type = 'None'
-        
+            self.type = 'Conv'
+            self.dfilter = 0
+            '''
             if input_ch == 1:
                 self.conv_filter[0,:,:,0] = np.array([[-1,0,1],[-1,0,1],[-1,0,1]])
                 self.conv_filter[1,:,:,0] = np.array([[-1,-1,-1],[0,0,0],[1,1,1]])
                 self.conv_filter[2,:,:,0] = np.array([[0,-1,0],[-1,5,-1],[0,-1,0]])
                 self.conv_filter[3,:,:,0] = 1/16 * np.array([[1,2,1],[2,4,2],[1,2,1]])
-
+                
             if input_ch == 4:
                 self.conv_filter[0,:,:,0] = np.array([[-1,0,1],[-1,0,1],[-1,0,1]])
                 self.conv_filter[1,:,:,0] = np.array([[-1,-1,-1],[0,0,0],[1,1,1]])
@@ -127,11 +128,13 @@ class Convolutional:
                 self.conv_filter[5,:,:,0] = np.array([[-1,-1,-1],[0,0,0],[1,1,1]])
                 self.conv_filter[6,:,:,0] = np.array([[0,-1,0],[-1,5,-1],[0,-1,0]])
                 self.conv_filter[7,:,:,0] = 1/16 * np.array([[1,2,1],[2,4,2],[1,2,1]])
-                
+            '''
             
     def forward(self, image): 
         #Keep track of last input shape
         self.A_prev = image
+        #Define output array --> feature maps
+        feature_maps = np.zeros((image.shape[0],image.shape[1],self.num_filters))
         
         #Function for image padding
         def pad_image(image):
@@ -147,43 +150,31 @@ class Convolutional:
                     #Zero Pad image
                     padded_array[:,:,i] = np.pad(image[:,:,i], padding_length, mode='constant', constant_values=0)
             return padded_array
-
-        #Function for Convolution of images with filter kernels
-        def convolve(padded_image):
+        
+        #Function for Convolution of image with filter
+        def convolve(padded_image, filters):
             #Initialize number of channels in image
-            self.ch_num = padded_image.shape[-1]
+            self.num_ch = padded_image.shape[-1]
             if self.padding == 'same':
                 #Initialize feature map variable with correct dimensions
-                feature_maps = np.zeros((padded_image.shape[0]-self.kernel_size+1,padded_image.shape[1]-self.kernel_size+1,self.num_filters))
-                #Iterate through every filter
-                for n in range(self.num_filters):
-                    print(f'Filter Nr: {n}')
-                    #New Conv Map for every filter
-                    feature_map = np.zeros((feature_maps.shape[0],feature_maps.shape[1]))
-                    conv_map = np.zeros((feature_maps.shape[0],feature_maps.shape[1]))
-                    #Iterate through all channels of image/filter
-                    for ch_num in range(self.ch_num):
-                        #Iterate through all Rows of image
-                        for rows in range(0,feature_maps.shape[0]):
-                            #Iterate through all columns of image
-                            for columns in range(0,feature_maps.shape[1]):
-                                #Pick ROI
-                                Quadrat = padded_image[rows:rows+self.kernel_size, columns:columns+self.kernel_size, ch_num]
-                                #Multiply ROI with filter and store sum in conv map
-                                conv_map[rows,columns] = np.sum(np.multiply(Quadrat,self.conv_filter[n,:,:,ch_num]))
-                        #Sum up conv maps from every single channel
-                        feature_map += conv_map
-                        conv_map = np.zeros((feature_maps.shape[0],feature_maps.shape[1]))
-                    #Store every conv map in feature maps
-                    feature_maps[:,:,n] = feature_map
-            
-            return feature_maps #Return feature maps
+                feature_map = np.zeros((padded_image.shape[0]-self.kernel_size+1,padded_image.shape[1]-self.kernel_size+1))
+                #Iterate through all channels of image/filter
+                for ch_num in range(self.num_ch):
+                    conv_map = np.zeros((feature_map.shape[0],feature_map.shape[1]))
+                    #Iterate through all Rows of image
+                    for rows in range(0,feature_map.shape[0]):
+                        #Iterate through all columns of image
+                        for columns in range(0,feature_map.shape[1]):
+                            #Pick ROI
+                            Quadrat = padded_image[rows:rows+self.kernel_size, columns:columns+self.kernel_size, ch_num]
+                            #Multiply ROI with filter and store sum in conv map
+                            conv_map[rows,columns] = np.sum(np.multiply(Quadrat,filters[:,:,ch_num]))
+                    #Sum up conv maps from every single channel
+                    feature_map += conv_map
+                
+            return feature_map #Return feature
         
-        #Pad Image with zeros
-        padded_image = pad_image(image)
-        #Calculate Convolution of image with filter kernels
-        feature_maps = convolve(padded_image)
-        
+        #Define ReLU Activation Function for feature maps
         def ReLU_activation(feature_maps):
             for map_num in range(feature_maps.shape[2]):
                 feature_map = feature_maps[:,:,map_num]
@@ -193,15 +184,85 @@ class Convolutional:
                         feature_maps[i,j,map_num] = y
             return feature_maps
         
+        #Pad input image with zeros
+        self.padded_image = pad_image(image)
+        
+        #Convolve every filter with image
+        for i in range(self.num_filters):
+            feature_maps[:,:,i] = convolve(self.padded_image, self.conv_filter[i])
+        
         #Apply Activation Function to feature maps
         feature_maps = ReLU_activation(feature_maps)
-        
-        
-        self.padded_array = padded_image
+        #Store feature maps in A
         self.A = feature_maps
-
-    def backward(self):
-        pass
+        
+        return feature_maps
+        
+    def backward(self, dA):
+        
+        #Function for image padding
+        def pad_image(image):
+            if self.padding == 'same':
+                #Initialize number of channels from image
+                num_ch = image.shape[2]
+                #Define padding length depending on filter kernel size
+                padding_length = int(np.floor(self.kernel_size/2))
+                #Define empty padded array
+                padded_array = np.zeros((image.shape[0]+2*padding_length,image.shape[1]+2*padding_length,num_ch))
+                #Iterate through every channel of image and zero pad it
+                for i in range(num_ch):
+                    #Zero Pad image
+                    padded_array[:,:,i] = np.pad(image[:,:,i], padding_length, mode='constant', constant_values=0)
+            return padded_array
+        
+        #Function for Convolution of image with filter
+        def convolve(padded_image, filters):
+            num_ch = 1
+            #Initialize kernel size
+            kernel_size = filters.shape[0]
+    
+            if self.padding == 'same':
+                #Initialize feature map variable with correct dimensions
+                feature_map = np.zeros((padded_image.shape[0]-kernel_size+1,padded_image.shape[1]-kernel_size+1))
+                #Iterate through all channels of image/filter
+                for ch_num in range(num_ch):
+                    conv_map = np.zeros((feature_map.shape[0],feature_map.shape[1]))
+                    #Iterate through all Rows of image
+                    for rows in range(0,feature_map.shape[0]):
+                        #Iterate through all columns of image
+                        for columns in range(0,feature_map.shape[1]):
+                            #Pick ROI
+                            Quadrat = padded_image[rows:rows+kernel_size, columns:columns+kernel_size]
+                            #Multiply ROI with filter and store sum in conv map
+                            conv_map[rows,columns] = np.sum(np.multiply(Quadrat,filters[:,:]))
+                    #Sum up conv maps from every single channel
+                    feature_map += conv_map
+            
+            #print(f'feature_map.shape:{feature_map.shape}')
+            return feature_map #Return feature
+    
+        dA_prev = np.zeros_like(self.A_prev)
+        #dZ_filters = np.zeros_like(self.conv_filter)
+        dW = np.zeros_like(self.conv_filter)
+        
+        A_prev = self.padded_image
+        db = 0
+        
+        
+        #print(f'A_prev:{A_prev.shape},  dA_shape:{dA.shape},   conv_filter_shape:{self.conv_filter.shape}, dW_shape:{dW.shape}')
+        
+        #Loop through all filters
+        for i in range(self.num_filters):
+            #Loop through all channels
+            for c in range(self.num_ch):
+                dW_temp = convolve(A_prev[:,:,c], dA[:,:,i])
+                dW[i,:,:,c] = dW_temp
+            
+            #dA_prev += convolve(A_prev[:,:,i],self.conv_filter[i])
+        
+        self.dW = dW
+        #print(f'dA_prev Con: {dA_prev.shape}')
+        return dA_prev, dW, db
     
     
 class Pooling:
@@ -209,7 +270,7 @@ class Pooling:
         self.mode = mode
         self.pool_size = pool_size
         self.stride = stride
-        self.reg_type = 'None'
+        self.type = 'Pooling'
         
     def forward(self, A_prev):
         #Save A_prev for later use in backward path
@@ -218,6 +279,8 @@ class Pooling:
         self.input_height, self.input_width, self.num_maps = A_prev.shape
         self.A = []
         feature_maps = []
+        self.pools = []
+        '''
         for p in range(self.num_maps):
             pools = []
             #Iterate through the whole A_prev with the given stride
@@ -230,6 +293,7 @@ class Pooling:
                         pools.append(mat)
             #Make Numpy array of list
             pools = np.array(pools)
+            self.pools.append(pools)
             #Define target shape of pooled array
             num_pools = pools.shape[0]
             self.target_shape = (int(np.sqrt(num_pools)), int(np.sqrt(num_pools)))
@@ -249,14 +313,63 @@ class Pooling:
         
         self.A = feature_maps
         #self.A = ReLU_activation(feature_maps)
-
+        '''
+        self.A_prev = A_prev
+        self.input_height, self.input_width, self.num_channels = A_prev.shape
+        self.output_height = self.input_height // self.pool_size
+        self.output_width = self.input_width // self.pool_size
+        
+        # Determining the output shape
+        self.A = np.zeros((self.output_height, self.output_width, self.num_channels))
+        
+        # Iterating over different channels
+        for c in range(self.num_channels):
+            # Looping through the height
+            for i in range(self.output_height):
+                # looping through the width
+                for j in range(self.output_width):
+        
+                    # Starting postition
+                    start_i = i * self.pool_size
+                    start_j = j * self.pool_size
+        
+                    # Ending Position
+                    end_i = start_i + self.pool_size
+                    end_j = start_j + self.pool_size
+        
+                    # Creating a patch from the input data
+                    patch = A_prev[start_i:end_i, start_j:end_j, c]
+        
+                    #Finding the maximum value from each patch/window
+                    self.A[i, j, c] = np.max(patch)
+                   
+                   
     def backward(self, dA):
         dA_prev = np.zeros_like(self.A_prev)
+
+        for c in range(self.num_channels):
+            for i in range(self.output_height):
+                for j in range(self.output_width):
+                    start_i = i * self.pool_size
+                    start_j = j * self.pool_size
         
-        for c in range(self.num_maps):
-            for i in range(self.target_shape[0]):
-                for j in range(self.target_shape[1]):
-                    pass
+                    end_i = start_i + self.pool_size
+                    end_j = start_j + self.pool_size
+                    patch = self.A_prev[start_i:end_i, start_j:end_j, c]
+        
+                    mask = patch == np.max(patch)
+        
+                    dA_prev[start_i:end_i, start_j:end_j, c] = dA[i, j, c] * mask
+        #print(f'dA_prev Shape Pooling: {dA_prev.shape}')
+        
+        self.A_gradient = dA_prev
+        dW = 0
+        db = 0
+        
+        return dA_prev, dW, db
+        
+        
+            
 
 
 class FullyConnected:
@@ -264,7 +377,7 @@ class FullyConnected:
         self.weights = 0.1 * np.random.rand(n_neurons, n_inputs)
         self.bias = np.zeros((n_neurons, 1))
         self.ActivationFunction = ActivationFunction
-        self.reg_type = 'None'
+        self.type = 'FCL'
         self.grads = []
 
     def forward(self,A_prev):
@@ -314,33 +427,23 @@ class FullyConnected:
             case 'None':
                 self.dZ = dA
         
-        print(f'dZ Shape:{self.dZ.shape}')
-        print(f'A_prev Shape:{self.A_prev.shape}')
+        #print(f'dZ Shape:{self.dZ.shape}')
+        #print(f'A_prev Shape:{self.A_prev.shape}')
         #Calculate dW depending on regularization params
         dW = np.dot(self.dZ, self.A_prev.flatten().reshape(1,-1))
+        self.dW = dW
+        #print(f'dW Shape: {dW.shape}')
         #Calculate db 
         db = np.sum(self.dZ, axis=1, keepdims=True)
+        self.db = db
         #Calculate dA_prev
         dA_prev = np.dot(self.weights.T, self.dZ)
         dA_prev = dA_prev.reshape(self.A_prev.shape)
-        print(dA_prev.shape)
+        self.dA_prev = dA_prev
+        #print(f'dA_prev Shape: {dA_prev.shape}')
         
         return dA_prev, dW, db
 
-class Flatten():
-    def __init__(self):
-        self.A = 0
-        self.reg_type = 'None'
-    
-    def forward(self, A_prev):
-        #Flatten feature maps to 1D array
-        #flattened_array = A_prev.flatten()
-        flattened_array = A_prev.flatten().reshape(1,-1)
-        
-        self.A = flattened_array
-    
-    def backward(self):
-        pass
 
 #%%Define all Activation Functions for forward and backward path
 def ReLU(Z):
