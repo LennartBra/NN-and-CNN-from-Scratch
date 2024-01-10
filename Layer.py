@@ -9,15 +9,21 @@ import numpy as np
 
 # %% Define classes for the different layers
 
+###############################################################################
+################################Dense Layer####################################
+###############################################################################
+
 # Define Dense Layer
 class Dense:
 
     # Initialize Dense Layer
     def __init__(self, n_inputs, n_neurons, ActivationFunction, alpha=0.1, L1Reg=0, L2Reg=0, Dropout_keep_prob=0):
-        #Initialize important attributes of layer
+        # Initialize parameters of Dense Layer
         self.ActivationFunction = ActivationFunction
         self.n_neurons = n_neurons
         self.n_inputs = n_inputs
+        self.type = 'Dense'
+        
         if L1Reg > 0:
             self.lambd = L1Reg
             self.reg_type = 'L1'
@@ -32,11 +38,11 @@ class Dense:
             self.lambd = 0
             self.reg_type = 'None'
     
-        # Intialize Weights and Bias depending on Arguments
+        # Intialize Weights and Bias
         self.weights = alpha * np.random.randn(n_neurons, n_inputs)
         self.bias =  np.zeros((n_neurons, 1))
         
-        #Initialize gradients
+        # Initialize gradients and variables for previous gradients
         self.grads = []
         self.vdW = 0
         self.vdb = 0
@@ -49,9 +55,10 @@ class Dense:
     def forward(self, A_prev):
         # Multiply Inputs with Weights, Make Sum and Add Bias
         self.Z = np.dot(self.weights, A_prev) + self.bias
+        # Save Weighted Sum for later use in backward path
         self.activation_cache = self.Z.copy()
+        # Save input as A_prev for later use in backward path
         self.A_prev = A_prev
-        self.linear_cache = (A_prev, self.weights, self.bias)
         # Apply Activation Function depending on desired Function in Neural Network
         match self.ActivationFunction:
             case 'ReLU':
@@ -100,153 +107,113 @@ class Dense:
         
         return dA_prev, dW, db
 
+    #Function that returns the weights of the layer
     def get_weights(self):
         return self.weights
 
 
+
+
+###############################################################################
+############################Convolutional Layer################################
+###############################################################################
+
+#Define Convolutional Layer
 class Convolutional:
-    def __init__(self, num_filters, kernel_size, padding, input_ch):
+    
+    # Initialize Convolutional Layer
+    def __init__(self, num_filters, kernel_size, input_shape=None, input_ch=0):
+            # Initialize parameters of Convolutional Layer
             self.kernel_size = kernel_size[0]
             self.num_filters = num_filters
-            self.padding = padding
+            if input_shape == None:
+                input_ch = input_ch
+            else:
+                input_ch = input_shape[-1]
+            np.random.seed(2)
             self.conv_filter = 0.1 * np.random.rand(num_filters, kernel_size[0],kernel_size[1], input_ch)
+            self.initial_kernel = self.conv_filter.copy()
             self.type = 'Conv'
             self.dfilter = 0
-            '''
-            if input_ch == 1:
-                self.conv_filter[0,:,:,0] = np.array([[-1,0,1],[-1,0,1],[-1,0,1]])
-                self.conv_filter[1,:,:,0] = np.array([[-1,-1,-1],[0,0,0],[1,1,1]])
-                self.conv_filter[2,:,:,0] = np.array([[0,-1,0],[-1,5,-1],[0,-1,0]])
-                self.conv_filter[3,:,:,0] = 1/16 * np.array([[1,2,1],[2,4,2],[1,2,1]])
-                
-            if input_ch == 4:
-                self.conv_filter[0,:,:,0] = np.array([[-1,0,1],[-1,0,1],[-1,0,1]])
-                self.conv_filter[1,:,:,0] = np.array([[-1,-1,-1],[0,0,0],[1,1,1]])
-                self.conv_filter[2,:,:,0] = np.array([[0,-1,0],[-1,5,-1],[0,-1,0]])
-                self.conv_filter[3,:,:,0] = 1/16 * np.array([[1,2,1],[2,4,2],[1,2,1]])
-                self.conv_filter[4,:,:,0] = np.array([[-1,0,1],[-1,0,1],[-1,0,1]])
-                self.conv_filter[5,:,:,0] = np.array([[-1,-1,-1],[0,0,0],[1,1,1]])
-                self.conv_filter[6,:,:,0] = np.array([[0,-1,0],[-1,5,-1],[0,-1,0]])
-                self.conv_filter[7,:,:,0] = 1/16 * np.array([[1,2,1],[2,4,2],[1,2,1]])
-            '''
+            self.vdfilter = 0
             
+    #Function for image padding
+    def pad_image(self, image):
+        #Initialize number of channels from image
+        num_ch = image.shape[-1]
+        #Define padding length depending on filter kernel size
+        padding_length = int(np.floor(self.kernel_size/2))
+        #Define empty padded array
+        padded_array = np.zeros((image.shape[0]+2*padding_length,image.shape[1]+2*padding_length,num_ch))
+        #Iterate through every channel of image and zero pad it
+        for i in range(num_ch):
+            #Zero Pad image and save in padded_array
+            padded_array[:,:,i] = np.pad(image[:,:,i], padding_length, mode='constant', constant_values=0)
+        
+        return padded_array
+    
+    #Function for Convolution of image with filter
+    def convolve(self, padded_image, filters):
+        #Define kernel_size depending on the filter
+        kernel_size = filters.shape[0]
+        #Initialize feature map variable with correct dimensions
+        feature_map = np.zeros((padded_image.shape[0]-kernel_size+1,padded_image.shape[1]-kernel_size+1))
+        conv_map = np.zeros((feature_map.shape[0],feature_map.shape[1]))
+        #Iterate through all Rows of image
+        for rows in range(0,feature_map.shape[0]):
+            #Iterate through all columns of image
+            for columns in range(0,feature_map.shape[1]):
+                #Pick ROI
+                Quadrat = padded_image[rows:rows+kernel_size, columns:columns+kernel_size]
+                #Multiply ROI with filter and store sum in conv map
+                conv_map[rows,columns] = np.sum(np.multiply(Quadrat,filters[:,:]))
+            #Sum up conv maps from every single channel
+            feature_map = conv_map
+            
+        return feature_map #Return feature
+        
     def forward(self, image): 
         #Keep track of last input shape
         self.A_prev = image
         #Define output array --> feature maps
         feature_maps = np.zeros((image.shape[0],image.shape[1],self.num_filters))
-        
-        #Function for image padding
-        def pad_image(image):
-            if self.padding == 'same':
-                #Initialize number of channels from image
-                num_ch = image.shape[2]
-                #Define padding length depending on filter kernel size
-                padding_length = int(np.floor(self.kernel_size/2))
-                #Define empty padded array
-                padded_array = np.zeros((image.shape[0]+2*padding_length,image.shape[1]+2*padding_length,num_ch))
-                #Iterate through every channel of image and zero pad it
-                for i in range(num_ch):
-                    #Zero Pad image
-                    padded_array[:,:,i] = np.pad(image[:,:,i], padding_length, mode='constant', constant_values=0)
-            return padded_array
-        
-        #Function for Convolution of image with filter
-        def convolve(padded_image, filters):
-            #Initialize number of channels in image
-            self.num_ch = padded_image.shape[-1]
-            if self.padding == 'same':
-                #Initialize feature map variable with correct dimensions
-                feature_map = np.zeros((padded_image.shape[0]-self.kernel_size+1,padded_image.shape[1]-self.kernel_size+1))
-                #Iterate through all channels of image/filter
-                for ch_num in range(self.num_ch):
-                    conv_map = np.zeros((feature_map.shape[0],feature_map.shape[1]))
-                    #Iterate through all Rows of image
-                    for rows in range(0,feature_map.shape[0]):
-                        #Iterate through all columns of image
-                        for columns in range(0,feature_map.shape[1]):
-                            #Pick ROI
-                            Quadrat = padded_image[rows:rows+self.kernel_size, columns:columns+self.kernel_size, ch_num]
-                            #Multiply ROI with filter and store sum in conv map
-                            conv_map[rows,columns] = np.sum(np.multiply(Quadrat,filters[:,:,ch_num]))
-                    #Sum up conv maps from every single channel
-                    feature_map += conv_map
-                
-            return feature_map #Return feature
-        
-        #Define ReLU Activation Function for feature maps
-        def ReLU_activation(feature_maps):
-            for map_num in range(feature_maps.shape[2]):
-                feature_map = feature_maps[:,:,map_num]
-                for i in range(feature_map.shape[0]):
-                    for j in range(feature_map.shape[1]):
-                        y = ReLU(feature_map[i,j])
-                        feature_maps[i,j,map_num] = y
-            return feature_maps
+
         
         #Pad input image with zeros
-        self.padded_image = pad_image(image)
-        
-        #Convolve every filter with image
+        self.padded_image = self.pad_image(image)
+        self.num_ch = self.padded_image.shape[-1]
+
+        #Loop through all filters
         for i in range(self.num_filters):
-            feature_maps[:,:,i] = convolve(self.padded_image, self.conv_filter[i])
+            #Loop through all channels
+            for j in range(self.num_ch):
+                feature_maps[:,:,i] += self.convolve(self.padded_image[:,:,j], self.conv_filter[i,:,:,j])
+        
+        #Save feature_maps for later use in backward path
+        self.activation_cache = feature_maps
         
         #Apply Activation Function to feature maps
-        feature_maps = ReLU_activation(feature_maps)
+        feature_maps = ReLU(feature_maps)
+
         #Store feature maps in A
         self.A = feature_maps
         
         return feature_maps
         
     def backward(self, dA):
+        #Apply Relu Activation Function backward
+        dA = ReLU_backward(dA, self.activation_cache)
         
-        #Function for image padding
-        def pad_image(image):
-            if self.padding == 'same':
-                #Initialize number of channels from image
-                num_ch = image.shape[2]
-                #Define padding length depending on filter kernel size
-                padding_length = int(np.floor(self.kernel_size/2))
-                #Define empty padded array
-                padded_array = np.zeros((image.shape[0]+2*padding_length,image.shape[1]+2*padding_length,num_ch))
-                #Iterate through every channel of image and zero pad it
-                for i in range(num_ch):
-                    #Zero Pad image
-                    padded_array[:,:,i] = np.pad(image[:,:,i], padding_length, mode='constant', constant_values=0)
-            return padded_array
-        
-        #Function for Convolution of image with filter
-        def convolve(padded_image, filters):
-            num_ch = 1
-            #Initialize kernel size
-            kernel_size = filters.shape[0]
-    
-            if self.padding == 'same':
-                #Initialize feature map variable with correct dimensions
-                feature_map = np.zeros((padded_image.shape[0]-kernel_size+1,padded_image.shape[1]-kernel_size+1))
-                #Iterate through all channels of image/filter
-                for ch_num in range(num_ch):
-                    conv_map = np.zeros((feature_map.shape[0],feature_map.shape[1]))
-                    #Iterate through all Rows of image
-                    for rows in range(0,feature_map.shape[0]):
-                        #Iterate through all columns of image
-                        for columns in range(0,feature_map.shape[1]):
-                            #Pick ROI
-                            Quadrat = padded_image[rows:rows+kernel_size, columns:columns+kernel_size]
-                            #Multiply ROI with filter and store sum in conv map
-                            conv_map[rows,columns] = np.sum(np.multiply(Quadrat,filters[:,:]))
-                    #Sum up conv maps from every single channel
-                    feature_map += conv_map
-            
-            #print(f'feature_map.shape:{feature_map.shape}')
-            return feature_map #Return feature
-    
+        #Initialize dA_prev, dW and db
         dA_prev = np.zeros_like(self.A_prev)
-        #dZ_filters = np.zeros_like(self.conv_filter)
         dW = np.zeros_like(self.conv_filter)
-        
-        A_prev = self.padded_image
         db = 0
+        
+        #Define A_prev for calculation of dW
+        A_prev = self.padded_image
+        
+        #Calculate dA_padded from dA
+        dA_padded = self.pad_image(dA)
         
         
         #print(f'A_prev:{A_prev.shape},  dA_shape:{dA.shape},   conv_filter_shape:{self.conv_filter.shape}, dW_shape:{dW.shape}')
@@ -255,141 +222,140 @@ class Convolutional:
         for i in range(self.num_filters):
             #Loop through all channels
             for c in range(self.num_ch):
-                dW_temp = convolve(A_prev[:,:,c], dA[:,:,i])
+                #Calculate dW
+                dW_temp = self.convolve(A_prev[:,:,c], dA[:,:,i])
                 dW[i,:,:,c] = dW_temp
             
-            #dA_prev += convolve(A_prev[:,:,i],self.conv_filter[i])
+                #dA_prev[:,:,c] += self.convolve(dA_padded[:,:,i], self.conv_filter[i,:,:,c])
         
+        #Save dW and dA_prev as class variables to keep track of them
         self.dW = dW
+        self.dA_prev = dA_prev
         #print(f'dA_prev Con: {dA_prev.shape}')
         return dA_prev, dW, db
     
+    #Function that returns the filter kernel weights
+    def get_filter_kernels(self):
+        return self.conv_filter
     
-class Pooling:
-    def __init__(self, mode: str, pool_size: int, stride: int):
-        self.mode = mode
+    
+###############################################################################
+##############################Pooling Layer####################################
+###############################################################################
+
+#Define MaxPooling Layer
+class Max_Pooling:
+    #Initialize Max Pooling Layer
+    def __init__(self, pool_size):
+        #Initialize important variables
         self.pool_size = pool_size
-        self.stride = stride
         self.type = 'Pooling'
-        
+    
+    #Forward Method for MaxPooling layer
     def forward(self, A_prev):
-        #Save A_prev for later use in backward path
+        #Initialize A_prev for later use in backward path
         self.A_prev = A_prev
-        
-        self.input_height, self.input_width, self.num_maps = A_prev.shape
-        self.A = []
-        feature_maps = []
-        self.pools = []
-        '''
-        for p in range(self.num_maps):
-            pools = []
-            #Iterate through the whole A_prev with the given stride
-            for i in np.arange(A_prev.shape[0], step=self.stride):
-                for j in np.arange(A_prev.shape[1], step=self.stride):
-                    #Get every single matrix that has to be pooled
-                    mat = A_prev[i:i+self.pool_size, j:j+self.pool_size,p]
-                    #Append Matrix to pools if shape is correct
-                    if mat.shape == (self.pool_size,self.pool_size):
-                        pools.append(mat)
-            #Make Numpy array of list
-            pools = np.array(pools)
-            self.pools.append(pools)
-            #Define target shape of pooled array
-            num_pools = pools.shape[0]
-            self.target_shape = (int(np.sqrt(num_pools)), int(np.sqrt(num_pools)))
-            pooled = []
-            #Apply Max or Avg Pooling to pools
-            if self.mode == 'Max Pooling':
-                for pool in pools:
-                    pooled.append(np.max(pool))
-            elif self.mode == 'Avg Pooling':
-                for pool in pools:
-                    pooled.append(np.mean(pool))
-            #Return pooled array as A
-            A = np.array(pooled).reshape(self.target_shape)
-            feature_maps.append(A)
-        feature_maps = np.array(feature_maps)
-        feature_maps = np.moveaxis(feature_maps,0,2)
-        
-        self.A = feature_maps
-        #self.A = ReLU_activation(feature_maps)
-        '''
-        self.A_prev = A_prev
+        #Initialize important variables
         self.input_height, self.input_width, self.num_channels = A_prev.shape
         self.output_height = self.input_height // self.pool_size
         self.output_width = self.input_width // self.pool_size
         
-        # Determining the output shape
+        #Determining the output shape and initialize variable for output
         self.A = np.zeros((self.output_height, self.output_width, self.num_channels))
         
-        # Iterating over different channels
+        #Iterating through all channels
         for c in range(self.num_channels):
-            # Looping through the height
+            #Iterate over the image height
             for i in range(self.output_height):
-                # looping through the width
+                #Iterate over the image width
                 for j in range(self.output_width):
         
-                    # Starting postition
+                    #Define start position/start pixel
                     start_i = i * self.pool_size
                     start_j = j * self.pool_size
         
-                    # Ending Position
+                    #Define end position/end pixel
                     end_i = start_i + self.pool_size
                     end_j = start_j + self.pool_size
         
-                    # Creating a patch from the input data
+                    # Creating a patch(pool_size x pool_size) from the input data
                     patch = A_prev[start_i:end_i, start_j:end_j, c]
         
                     #Finding the maximum value from each patch/window
                     self.A[i, j, c] = np.max(patch)
                    
-                   
+    #Backward Method for MaxPooling layer               
     def backward(self, dA):
+        #Initialize dA_prev
         dA_prev = np.zeros_like(self.A_prev)
-
+        
+        #Iterate through all channels
         for c in range(self.num_channels):
+            #Iterate over the image height
             for i in range(self.output_height):
+                #Iterate over the image width
                 for j in range(self.output_width):
+                    #Define start position/start pixel
                     start_i = i * self.pool_size
                     start_j = j * self.pool_size
-        
+                    
+                    #Define end position/end pixel
                     end_i = start_i + self.pool_size
                     end_j = start_j + self.pool_size
+                    
+                    #Pick a patch from A_prev
                     patch = self.A_prev[start_i:end_i, start_j:end_j, c]
-        
+                    
+                    #Create a mask where the maximum value equals 1, else 0
                     mask = patch == np.max(patch)
         
+                    #Multiply dA with mask to propagate maximum values
                     dA_prev[start_i:end_i, start_j:end_j, c] = dA[i, j, c] * mask
         #print(f'dA_prev Shape Pooling: {dA_prev.shape}')
         
+        #Save dA_prev as class variable to keep track
         self.A_gradient = dA_prev
+        #Initialize dW and db to return
         dW = 0
         db = 0
         
         return dA_prev, dW, db
         
         
-            
+###############################################################################
+############################Fully Connected Layer##############################        
+###############################################################################
 
-
+#Define FullyConnected Layer
 class FullyConnected:
-    def __init__(self, n_inputs, n_neurons, ActivationFunction):
-        self.weights = 0.1 * np.random.rand(n_neurons, n_inputs)
+    #Initialie FullyConnnected Layer
+    def __init__(self, n_neurons, ActivationFunction):
+        #Initialize important variables
+        np.random.seed(2)
+        self.n_inputs = 0
+        self.n_neurons = n_neurons
+        #self.weights = 0.1 * np.random.rand(n_neurons, n_inputs)
         self.bias = np.zeros((n_neurons, 1))
         self.ActivationFunction = ActivationFunction
         self.type = 'FCL'
         self.grads = []
-
+        self.vdW = 0
+        self.vdb = 0
+    
+    #Define forward method for FullyConnected layer
     def forward(self,A_prev):
-        #Keep track of last input shape
-        self.last_input_shape = A_prev.shape
-        
         #Flatten input array
         flattened_array = A_prev.flatten().reshape(1,-1)
-        self.flattened_array = flattened_array
+        #self.flattened_array = flattened_array
+        
+        #Initialize Weights depending on the input from previous layer
+        if self.n_inputs == 0:
+            self.n_inputs = flattened_array.shape[1]
+            self.weights = 0.1 * np.random.rand(self.n_neurons, self.n_inputs)
         
         #Calculate Z
         self.Z = np.dot(self.weights, flattened_array.T) + self.bias
+        #Save A_prev and Z for later use in backward path
         self.A_prev = A_prev
         self.activation_cache = self.Z.copy()
 
@@ -429,7 +395,7 @@ class FullyConnected:
         
         #print(f'dZ Shape:{self.dZ.shape}')
         #print(f'A_prev Shape:{self.A_prev.shape}')
-        #Calculate dW depending on regularization params
+        #Calculate dW depending on regularization params and reshape flattened array into image
         dW = np.dot(self.dZ, self.A_prev.flatten().reshape(1,-1))
         self.dW = dW
         #print(f'dW Shape: {dW.shape}')
@@ -445,56 +411,72 @@ class FullyConnected:
         return dA_prev, dW, db
 
 
+
+###############################################################################
+############################Activation Functions###############################
+###############################################################################
 #%%Define all Activation Functions for forward and backward path
+
+#Define ReLu activation function forward
 def ReLU(Z):
     A = np.maximum(0, Z)
     return A
 
+#Define ReLu activation function backward
 def ReLU_backward(dA, cache):
     Z = cache
     s = np.where(Z <= 0, 0.0, 1.0)
     dZ = dA * s
     return dZ
     
+#Define Leaky_ReLu activation function forward
 def Leaky_ReLU(Z, alpha=0.1):
     A = np.where(Z > 0, Z, Z * alpha)
     return A
 
+#Define Leaky_ReLu activation function backward
 def Leaky_ReLU_backward(dA, cache, alpha=0.1):
     Z = cache
     s = np.where(Z <= 0, alpha, 1.0)
     dZ = dA * s
     return dZ
 
+#Define Sigmoid activation function forward
 def Sigmoid(Z):
     A = 1 / (1 + np.exp(-Z))
     return A
 
+#Define Sigmoid activation function backward
 def Sigmoid_backward(dA, cache):
     Z = cache
     s = 1/(1 + np.exp(-Z))
     dZ = dA * s * (1-s)
     return dZ
 
+#Define tanh function forward
 def tanh(Z):
     A = np.tanh(Z)
     return A
 
+#Define tanh function backward
 def tanh_backward(dA, cache):
     Z = cache
     s = np.tanh(Z)
     dZ = dA * (1.0-np.power(s,2))
     return dZ
-    
+  
+#Define Softmax activation function forward
 def Softmax(Z):
     exp_values = np.exp(Z - np.max(Z, axis=0, keepdims=True))
     probabilities = exp_values / np.sum(exp_values, axis=0, keepdims=True)
     A = probabilities
     return A
 
+#Define Softmax activation functiokn backward
 def Softmax_backward(dA, A_pred):
     #Calculate Derivative of Loss function w.r.t. Z
     dZ = A_pred - dA
+    #print(f'A_pred:{A_pred.shape}, dA:{dA.shape}, dZ:{dZ.shape}')
     
     return dZ
 
