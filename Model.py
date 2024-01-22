@@ -7,13 +7,63 @@ Autor: Lennart Brakelmann
 import numpy as np
 import matplotlib.pyplot as plt
 
-#Class for Neural Network --> Multilayer Perceptron
-class NeuralNetwork:
+#Parent class
+class Network:
+    #Function for plotting the accuracy over the epochs
+    def plot_acc(self):
+        plt.figure()
+        plt.plot(self.x_plot,self.accs, label='Acc')
+        plt.title('Model Accuracy - Own Implementation')
+        plt.xlabel('Epoch')
+        plt.ylabel('acc')
+        plt.ylim([0, 1])
+        plt.legend()
+        plt.show()
+    
+    #Function for plotting the loss over the epochs
+    def plot_loss(self):
+        plt.figure()
+        plt.plot(self.x_plot,self.costs, label='Loss')
+        plt.title('Model Loss - Own Implementation')
+        plt.xlabel('Epoch')
+        plt.ylabel('loss')
+        plt.legend()
+        plt.show()
+        
+    #Function for calculating accuracy 
+    def calculate_accuracy(self, y_pred, y_true):
+        y_pred = np.array(y_pred)
+        y_true = np.array(y_true)
+        
+        correct = np.sum(y_pred==y_true)
+        acc = correct/ len(y_true)
+        
+        return acc
+
+    #Function for making a one hot encoded vector    
+    def make_onehot_vec(self, y_true, num_classes):
+        L = int(len(y_true))
+        C = num_classes
+        y_onehot = np.zeros((C,L))
+        for i in range(0,L):
+            y = int(y_true[i])
+            y_onehot[y,i] = 1
+            
+        return y_onehot
+    
+    #Print Model Structure  
+    def print_model_structure(self):
+        #Iterate through every layer and print details
+        for layer in self.layers:
+            print(layer)
+        
+        
+#Child class for Neural Network --> Multilayer Perceptron
+class NeuralNetwork(Network):
     
     #Initialize Object
     def __init__(self):
         self.layers = []
-        self.layer_dims = []
 
     #Function for adding layers to the network
     def add(self,layer):
@@ -28,11 +78,6 @@ class NeuralNetwork:
             elif layer.ActivationFunction == 'Sigmoid' or layer.ActivationFunction == 'tanh':
                 layer.weights = np.random.randn(layer.n_neurons, layer.n_inputs) * np.sqrt(2/(layer.n_inputs+layer.n_neurons))
             
-    #Print Model Structure  
-    def print_model_structure(self):
-        #Iterate through every layer and print details
-        for layer in self.layers:
-            print(layer)
     
     #Forward Propagation Method for Neural Network
     def forward_propagation(self, A_prev):
@@ -45,12 +90,12 @@ class NeuralNetwork:
                 A = layer.A.copy()
                 #Create a mask with the keep_prob for the neurons
                 keep_prob = layer.keep_prob
-                mask = np.random.rand(A.shape[0],A.shape[1])
+                mask = np.random.binomial(1,keep_prob,A.shape)
                 #Multilply mask with A and scale the activation
                 A = A * mask
                 layer.A = (1/keep_prob) * A
                 #Save mask as self.D
-                self.D = mask
+                layer.D = mask
                 
             #Save current Output as input for next layer
             A_prev = layer.A
@@ -63,7 +108,7 @@ class NeuralNetwork:
         
         #Check for loss function of the model and calculate dA
         if self.model_loss_function == 'Categorical Crossentropy':
-            dA = make_onehot_vec(y_true,self.num_classes)
+            dA = self.make_onehot_vec(y_true,self.num_classes)
         elif self.model_loss_function == 'Binary Crossentropy':
             dA = - (np.divide(y_true, y_pred) - np.divide(1 - y_true, 1 - y_pred)) #-(y/a - (1-y)/(1-a))        
         #print(f"Loss_dA:{dA}")
@@ -73,14 +118,16 @@ class NeuralNetwork:
         
         #Iterate through every layer backwards --> from the end to the beginning
         for layer in reversed(self.layers):
-            #Use backward function for every layer --> Calculate dA_prev, dW and db
-            dA_prev, dW, db = layer.backward(dA_prev)
             #Calculate dA_prev wrt. Dropout if Dropout was activated
             if layer.reg_type == 'Dropout':
                 mask = layer.D
                 keep_prob = layer.keep_prob
+                #print(f'dA_prev shape: {dA_prev.shape}')
+                #print(f'mask shape: {mask.shape}')
                 dA_prev = (dA_prev * mask) / keep_prob
-            
+                
+            #Use backward function for every layer --> Calculate dA_prev, dW and db
+            dA_prev, dW, db = layer.backward(dA_prev)
             #Save dW and db (gradients) in layer.grads for parameter update
             layer.grads = [dW, db]
             
@@ -90,14 +137,14 @@ class NeuralNetwork:
         
         
     #Function for updating the parameters
-    def update_parameters(self):
+    def update_parameters(self, learning_rate):
         #Update parameters depending on the optimizer
         if self.optimizer == 'None':
             #Iterate through every layer and update parameters with gradients
             for layer in self.layers:
                 #Update weights and bias with gradients dW and db
-                layer.weights = layer.weights - self.learning_rate * layer.grads[0]
-                layer.bias = layer.bias - self.learning_rate * layer.grads[1]    
+                layer.weights = layer.weights - learning_rate * layer.grads[0]
+                layer.bias = layer.bias - learning_rate * layer.grads[1]    
         elif self.optimizer == 'Momentum':
             #Initialize Hyperparameter
             beta1 = 0.9
@@ -107,8 +154,8 @@ class NeuralNetwork:
                 layer.vdW = beta1 * layer.vdW + (1-beta1) * layer.grads[0]
                 layer.vdb = beta1 * layer.vdb + (1-beta1) * layer.grads[1]
                 #Update Weights and Bias with vdW and vdb
-                layer.weights = layer.weights - self.learning_rate * layer.vdW
-                layer.bias = layer.bias - self.learning_rate * layer.vdb
+                layer.weights = layer.weights - learning_rate * layer.vdW
+                layer.bias = layer.bias - learning_rate * layer.vdb
         elif self.optimizer == 'RMSprop':
             #Initialize Hyperparameters
             beta2 = 0.999
@@ -119,8 +166,8 @@ class NeuralNetwork:
                 layer.sdW = beta2 * layer.sdW + (1-beta2) * (layer.grads[0]**2)
                 layer.sdb = beta2 * layer.sdb + (1-beta2) * (layer.grads[1]**2)
                 #Update weights and bias with dW, sdW and db, sdb
-                layer.weights = layer.weights - self.learning_rate * layer.grads[0]/(np.sqrt(layer.sdW)+epsilon)
-                layer.bias = layer.bias - self.learning_rate * layer.grads[1]/(np.sqrt(layer.sdb)+epsilon)
+                layer.weights = layer.weights - learning_rate * layer.grads[0]/(np.sqrt(layer.sdW)+epsilon)
+                layer.bias = layer.bias - learning_rate * layer.grads[1]/(np.sqrt(layer.sdb)+epsilon)
         elif self.optimizer == 'Adam':
             #Initialize Hyperparameters
             beta1 = 0.9
@@ -134,14 +181,13 @@ class NeuralNetwork:
                 layer.sdW = beta2 * layer.sdW + (1-beta2) * (layer.grads[0]**2)
                 layer.sdb = beta2 * layer.sdb + (1-beta2) * (layer.grads[1]**2)
                 #Update weights and bias with vdW, sdW, vdb and sdb
-                layer.weights = layer.weights - self.learning_rate * (layer.vdW/(np.sqrt(layer.sdW)+epsilon))
-                layer.bias = layer.bias - self.learning_rate * (layer.vdb/(np.sqrt(layer.sdb)+epsilon))
+                layer.weights = layer.weights - learning_rate * (layer.vdW/(np.sqrt(layer.sdW)+epsilon))
+                layer.bias = layer.bias - learning_rate * (layer.vdb/(np.sqrt(layer.sdb)+epsilon))
             
             
     #Function for training of the Neural Network
     def train(self ,X ,y_true, learning_rate, loss_function, epochs, batch_size='None', optimizer='None'):
         #Intialize important parameters
-        self.learning_rate = learning_rate
         self.model_loss_function = loss_function
         self.costs = []
         self.accs = []
@@ -149,6 +195,8 @@ class NeuralNetwork:
         self.num_classes = int(max(y_true))+1
         self.optimizer = optimizer
         
+        #Transpose X for vectorization
+        X = X.T
         
         #Divide X into batches depending on batch size
         batch_index = np.arange(0,X.shape[1],batch_size)
@@ -174,21 +222,23 @@ class NeuralNetwork:
                 #Backward Propagation
                 self.backward_propagation(y_pred_batch, y_true_batch)
                 #Update Parameters with gradients from backward propagation
-                self.update_parameters()
+                self.update_parameters(learning_rate)
             #Calculate Loss and Accuracy of Network - Save acc and loss for history
             if i%1 == 0:
                 self.forward_propagation(X)
                 y_pred = self.layers[-1].A
                 Loss = self.calculate_Loss(y_pred, y_true, self.model_loss_function)
-                y_pred = self.predict(X)
-                acc = calculate_accuracy(y_pred, y_true)
+                y_pred = self.predict(X.T)
+                acc = self.calculate_accuracy(y_pred, y_true)
                 self.costs.append(Loss)
                 self.accs.append(acc)
-                self.x_plot.append(i)
+                self.x_plot.append(i+1)
                 print(f'Epoch:{i+1}, Loss: {Loss}, Acc: {acc}') 
     
     #Function for making a prediction with trained network
     def predict(self,X):
+        #Transpose X for vectorization
+        X = X.T
         #Propagate forward through network
         self.forward_propagation(X)
         #Save Predictions in A_pred
@@ -201,36 +251,14 @@ class NeuralNetwork:
             y_pred = np.argmax(A_pred, axis=0)
         
         return y_pred
-    
-    #Function for plotting the accuracy over the epochs
-    def plot_acc(self):
-        plt.figure()
-        plt.plot(self.x_plot,self.accs, label='Acc')
-        plt.title('Model Accuracy - Own Implementation')
-        plt.xlabel('Epoch')
-        plt.ylabel('acc')
-        plt.ylim([0, 1])
-        plt.legend()
-        plt.show()
-    
-    #Function for plotting the loss over the epochs
-    def plot_loss(self):
-        plt.figure()
-        plt.plot(self.x_plot,self.costs, label='Loss')
-        plt.title('Model Loss - Own Implementation')
-        plt.xlabel('Epoch')
-        plt.ylabel('loss')
-        plt.legend()
-        plt.show()
-                    
-    
+
 
     #Function for calculating the loss of the network
-    def calculate_Loss(self,y_pred, y_true, costfunction):
+    def calculate_Loss(self, y_pred, y_true, costfunction):
         #Initialize m --> number of samples
         m = y_pred.shape[1]
         #Make one hot vector y_onehot from y_true
-        y_onehot = make_onehot_vec(y_true, self.num_classes)
+        y_onehot = self.make_onehot_vec(y_true, self.num_classes)
         
         #Calculate Loss depending on the predetermined loss function
         if costfunction == 'Binary Crossentropy':
@@ -258,42 +286,12 @@ class NeuralNetwork:
 
         return loss
 
-#Function for calculating accuracy 
-def calculate_accuracy(y_pred, y_true):
-    y_pred = np.array(y_pred)
-    y_true = np.array(y_true)
-    
-    correct = np.sum(y_pred==y_true)
-    acc = correct/ len(y_true)
-    
-    return acc
-
-#Function for making a one hot encoded vector    
-def make_onehot_vec(y_true, num_classes):
-    L = int(len(y_true))
-    C = num_classes
-    y_onehot = np.zeros((C,L))
-    for i in range(0,L):
-        y = int(y_true[i])
-        y_onehot[y,i] = 1
-        
-    return y_onehot
-            
-
-
-
-
-
-
-
-
-
 
 
 
 
 #Class for Convolutional Neural Network
-class ConvolutionalNeuralNetwork:
+class ConvolutionalNeuralNetwork(Network):
     #Initialize ConvolutionalNeuralNetwork object
     def __init__(self):
         self.layers = []
@@ -301,11 +299,6 @@ class ConvolutionalNeuralNetwork:
     #Function for adding layers to the convolutional neural network
     def add(self,layer):
         self.layers.append(layer)
-     
-    #Function for printing the model structure
-    def print_model_structure(self):
-        for layer in self.layers:
-            print(layer)
     
     #Function for forward progation of the network
     def forward_propagation(self, A_prev):
@@ -361,47 +354,21 @@ class ConvolutionalNeuralNetwork:
             
         
     #Function for updating the parameters of the convolutional neural network
-    def update_parameters(self, batch_size):
-        batch_size = 1
+    def update_parameters(self, learning_rate):
         #Check for predetermined optimizer and update parameters
         if self.optimizer == 'None':
             #Iterate through every layer
             for layer in self.layers:
                 #Update weights and bias with gradients dW,db and dfilter depending on layer type
                 if layer.type == 'FCL':
-                    layer.weights = layer.weights - self.learning_rate * layer.grads[0]
-                    layer.bias = layer.bias - self.learning_rate * layer.grads[1] 
+                    layer.weights = layer.weights - learning_rate * layer.grads[0]
+                    layer.bias = layer.bias - learning_rate * layer.grads[1] 
                     layer.grads = []
                 if layer.type == 'Dense':
-                    layer.weights = layer.weights - self.learning_rate * layer.grads[0]
-                    layer.bias = layer.bias - self.learning_rate * layer.grads[1]    
+                    layer.weights = layer.weights - learning_rate * layer.grads[0]
+                    layer.bias = layer.bias - learning_rate * layer.grads[1]    
                 if layer.type == 'Conv':
-                    layer.conv_filter = layer.conv_filter - self.learning_rate * layer.dfilter
-                    layer.dfilter = 0
-                elif layer.type == 'Pooling':
-                    pass
-        elif self.optimizer == 'Momentum':
-            #Initialize Hyperparameter
-            beta1 = 0.9
-            #Iterate through every layer
-            for layer in self.layers:
-                #Update weights and bias with gradients dW,db and dfilter depending on layer type
-                if layer.type == 'FCL':
-                    #Update vdW and vdb
-                    layer.vdW = beta1 * layer.vdW + (1-beta1) * layer.grads[0]
-                    layer.vdb = beta1 * layer.vdb + (1-beta1) * layer.grads[1]
-                    #Update weights and bias
-                    layer.weights = layer.weights - self.learning_rate * layer.grads[0] * layer.vdW
-                    layer.bias = layer.bias - self.learning_rate * layer.grads[1] * layer.vdb
-                    layer.grads = []
-                if layer.type == 'Dense':
-                    layer.weights = layer.weights - self.learning_rate * layer.grads[0]
-                    layer.bias = layer.bias - self.learning_rate * layer.grads[1]
-                if layer.type == 'Conv':
-                    #Update vdfilter
-                    layer.vdfilter = beta1 * layer.vdfilter + (1-beta1) * layer.dfilter
-                    #Update dfilter
-                    layer.conv_filter = layer.conv_filter - self.learning_rate * layer.dfilter * layer.vdfilter
+                    layer.conv_filter = layer.conv_filter - learning_rate * layer.dfilter
                     layer.dfilter = 0
                 elif layer.type == 'Pooling':
                     pass
@@ -409,7 +376,6 @@ class ConvolutionalNeuralNetwork:
     #Function for training the neural network
     def train(self ,X ,y_true, learning_rate, loss_function, epochs, batch_size='None', optimizer='None'):
         #Define important variables
-        self.learning_rate = learning_rate
         self.model_loss_function = loss_function
         self.costs = []
         self.accs = []
@@ -418,39 +384,9 @@ class ConvolutionalNeuralNetwork:
         self.num_samples = len(y_true)
         self.optimizer = optimizer
         self.y_true = y_true
+        
             
         #Train neural network depending on batch size
-        #batch_size 'None' equals batch_size=1
-        '''
-        if batch_size == 'None':
-            #Iterate through every epoch
-            for j in range(epochs):
-                #Initialize total_loss and correct_predcitions at beginning of every epoch
-                total_loss = 0
-                correct_predictions = 0
-                
-                #Itertate through every image
-                for i in range(X.shape[0]):
-                    X_in = X[i,:,:,:]
-                    self.forward_propagation(X_in)
-                    y_pred = np.squeeze(self.layers[-1].A)
-                    y_in = y_true[i]
-                    if np.argmax(y_pred, axis=0) == y_in:
-                        correct_predictions += 1
-                    loss = self.calculate_Loss(y_pred, y_in, self.model_loss_function)
-                    total_loss += loss
-                    self.backward_propagation(y_pred, y_in, batch_size)
-                    self.update_parameters()
-                acc = correct_predictions / X.shape[0]
-                print(f'Epoch:{j+1}, Total Loss: {total_loss}, Acc:{acc}')
-                
-                self.costs.append(total_loss)
-                self.accs.append(acc)
-                self.x_plot.append(i)
-                print(f'Epoch:{i}, Loss: {loss}, Acc: {acc}')
-            
-        elif batch_size > 0:
-            '''
         #Divide X into batches depending on batch size
         batch_index = np.arange(0,X.shape[0],batch_size)
         batch_index = np.append(batch_index,X.shape[0])
@@ -487,10 +423,13 @@ class ConvolutionalNeuralNetwork:
                     #Propagate backward through network and calculate gradients
                     self.backward_propagation(y_pred, y_in, batch_size)
                 #Use gradients to update parameters
-                self.update_parameters(batch_size)
+                self.update_parameters(learning_rate)
             
             #Calculate overall accuracy from correct_predictions
             acc = correct_predictions / X.shape[0]
+            self.costs.append(total_loss)
+            self.accs.append(acc)
+            self.x_plot.append(j+1)
             
             print(f'Epoch:{j+1}, Total Loss: {total_loss}, Acc:{acc}')
             
@@ -502,12 +441,13 @@ class ConvolutionalNeuralNetwork:
         for i in range(X.shape[0]):
             #Define i-th image as X_in
             X_in = X[i,:,:,:]
-            #Propagate forward through network
+            #Propagate X_in forward through network
             self.forward_propagation(X_in)
             #Save prediction with highest probability and append to y_pred
             y_pred_in = np.squeeze(self.layers[-1].A)
             y_pred_in = np.argmax(y_pred_in, axis=0)
             y_pred.append(y_pred_in)
+        #Make y_pred to numpy array
         y_pred = np.array(y_pred)
         
         return y_pred
@@ -528,6 +468,7 @@ class ConvolutionalNeuralNetwork:
             #print(f'Loss:{loss}')
 
         return loss
+    
 
 
         

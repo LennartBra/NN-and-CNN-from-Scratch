@@ -91,6 +91,7 @@ class Dense:
                 self.dZ = dA
         
         #Calculate Gradients for Layer
+        #Save number of samples/batch_size
         m = self.A_prev.shape[1]
         
         #Calculate dW depending on regularization params
@@ -135,7 +136,6 @@ class Convolutional:
             self.initial_kernel = self.conv_filter.copy()
             self.type = 'Conv'
             self.dfilter = 0
-            self.vdfilter = 0
             
     #Function for image padding
     def pad_image(self, image):
@@ -339,8 +339,6 @@ class FullyConnected:
         self.ActivationFunction = ActivationFunction
         self.type = 'FCL'
         self.grads = []
-        self.vdW = 0
-        self.vdb = 0
     
     #Define forward method for FullyConnected layer
     def forward(self,A_prev):
