@@ -16,6 +16,7 @@ After the installation of the virtual environment you can download, open and exe
 This section gives you information on the structure of the project and how to get started with it. You can also find an UML-diagram of the project and and the most important functions to work with the proejct.
 
 ### Project Structure
+The projects consists of three different scripts and down below you can find short descriptions of the scripts
 - 'Main.py': Load datasets, preprocess data; Build, train and evaluate NN and CNN
 - 'Model.py': Implementation of the models; Script for the NN class and the CNN class
 - 'Layer.py': Implementation of the layers for NNs and CNNs
