@@ -4,7 +4,7 @@
 [Description](#Description)\
 [Installation](#Installation)\
 [Structure](#Structure)\
-[Code Example](#Code*Example)
+[Code Example](#CodeExample)\
 [License](#License)
 
 ## Description
