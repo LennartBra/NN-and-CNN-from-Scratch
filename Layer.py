@@ -133,7 +133,6 @@ class Convolutional:
                 input_ch = input_shape[-1]
             np.random.seed(2)
             self.conv_filter = 0.1 * np.random.rand(num_filters, kernel_size[0],kernel_size[1], input_ch)
-            self.initial_kernel = self.conv_filter.copy()
             self.type = 'Conv'
             self.dfilter = 0
             
@@ -144,13 +143,13 @@ class Convolutional:
         #Define padding length depending on filter kernel size
         padding_length = int(np.floor(self.kernel_size/2))
         #Define empty padded array
-        padded_array = np.zeros((image.shape[0]+2*padding_length,image.shape[1]+2*padding_length,num_ch))
+        padded_image = np.zeros((image.shape[0]+2*padding_length,image.shape[1]+2*padding_length,num_ch))
         #Iterate through every channel of image and zero pad it
         for i in range(num_ch):
             #Zero Pad image and save in padded_array
-            padded_array[:,:,i] = np.pad(image[:,:,i], padding_length, mode='constant', constant_values=0)
+            padded_image[:,:,i] = np.pad(image[:,:,i], padding_length, mode='constant', constant_values=0)
         
-        return padded_array
+        return padded_image
     
     #Function for Convolution of image with filter
     def convolve(self, padded_image, filters):
@@ -403,7 +402,6 @@ class FullyConnected:
         #Calculate dA_prev
         dA_prev = np.dot(self.weights.T, self.dZ)
         dA_prev = dA_prev.reshape(self.A_prev.shape)
-        self.dA_prev = dA_prev
         #print(f'dA_prev Shape: {dA_prev.shape}')
         
         return dA_prev, dW, db

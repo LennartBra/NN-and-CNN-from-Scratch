@@ -8,7 +8,6 @@ Autor: Lennart Brakelmann
 import numpy as np
 import Layer
 from Model import NeuralNetwork, ConvolutionalNeuralNetwork
-from Activation import Activation
 import matplotlib.pyplot as plt
 
 #Define Function to Standardize Data
@@ -67,7 +66,6 @@ acc_NN = accuracy_score(y_test, y_pred_NN)
 #Plot accuracy and loss of Neural Network for training data
 Neural_Network.plot_acc()
 Neural_Network.plot_loss()
-
 
 ###############################################################################
 #####################Create Neural Network with Keras library##################
@@ -142,19 +140,16 @@ X_test_mnist = X_test_mnist / 255
 
 #Change dimensions to make data suitable for CNN
 X_train_mnist = np.expand_dims(X_train_mnist, axis=3)
-#X_train_mnist = X_train_mnist[0:5000]
 X_test_mnist = np.expand_dims(X_test_mnist, axis=3)
-#X_test_mnist = X_test_mnist[0:100]
 
 #Plot two images as examples to see what the data looks like
-plot_two_images(X_train_mnist[499,:,:,0],X_train_mnist[499,:,:,0])
+plot_two_images(X_train_mnist[499,:,:,0],X_train_mnist[500,:,:,0])
 
 #Create CNN model and add layers to the model
 CNN_mnist = ConvolutionalNeuralNetwork()
 CNN_mnist.add(Layer.Convolutional(num_filters=4, kernel_size=(3,3), input_shape=(28,28,1)))
 CNN_mnist.add(Layer.Max_Pooling(pool_size=2))
 CNN_mnist.add(Layer.FullyConnected(10, 'Softmax'))
-#CNN_mnist.add(Layer.FullyConnected(196, 10, 'Softmax'))
 
 #Train CNN with training data
 CNN_mnist.train(X_train_mnist[0:3000],y_train_mnist[0:3000],learning_rate=0.01,
@@ -165,29 +160,13 @@ CNN_mnist.train(X_train_mnist[0:3000],y_train_mnist[0:3000],learning_rate=0.01,
 Ergebnis_CNN_mnist = CNN_mnist.layers[0].A
 Ergebnis_padded_image = CNN_mnist.layers[0].padded_image
 Ergebnis_Pooling_mnist = CNN_mnist.layers[1].A
-#Ergebnis_flattened = CNN_mnist.layers[2].flattened_array
 Ergebnis_Softmax = CNN_mnist.layers[2].A
 
+#Plot the interim results
 plot_two_images(Ergebnis_CNN_mnist[:,:,0], Ergebnis_CNN_mnist[:,:,1])
 plot_two_images(Ergebnis_CNN_mnist[:,:,2],Ergebnis_CNN_mnist[:,:,3])
 plot_two_images(Ergebnis_Pooling_mnist[:,:,0], Ergebnis_Pooling_mnist[:,:,1])
 plot_two_images(Ergebnis_Pooling_mnist[:,:,2],Ergebnis_Pooling_mnist[:,:,3])
-
-#Take a look at gradients
-FLC_dW = CNN_mnist.layers[2].dW
-FLC_db = CNN_mnist.layers[2].db
-FLC_dA_prev = CNN_mnist.layers[2].dA_prev
-
-Pooling_Gradient = CNN_mnist.layers[1].A_gradient
-
-CL_dW = CNN_mnist.layers[0].dW
-Filter1 = CNN_mnist.layers[0].conv_filter[0,:,:,0]
-Filter2 = CNN_mnist.layers[0].conv_filter[1,:,:,0]
-Filter3 = CNN_mnist.layers[0].conv_filter[2,:,:,0]
-Filter4 = CNN_mnist.layers[0].conv_filter[3,:,:,0]
-
-#Take a look at the filter kernel weights
-FilterKernelWeights = CNN_mnist.layers[0].get_filter_kernels()
 
 #Test CNN on Test Data
 y_pred = CNN_mnist.predict(X_test_mnist[0:500])
@@ -244,6 +223,9 @@ plt.ylabel( 'loss' )
 plt.xlabel( 'epoch' )
 plt.legend([ 'loss' ], loc= 'upper left' )
 plt.show()
+
+
+
 
 
 

@@ -254,21 +254,21 @@ class NeuralNetwork(Network):
 
 
     #Function for calculating the loss of the network
-    def calculate_Loss(self, y_pred, y_true, costfunction):
+    def calculate_Loss(self, y_pred, y_true, loss_function):
         #Initialize m --> number of samples
         m = y_pred.shape[1]
         #Make one hot vector y_onehot from y_true
         y_onehot = self.make_onehot_vec(y_true, self.num_classes)
         
         #Calculate Loss depending on the predetermined loss function
-        if costfunction == 'Binary Crossentropy':
+        if loss_function == 'Binary Crossentropy':
             loss = -1/m * np.sum(y_true*np.log(y_pred)+(1-y_true)*np.log(1-y_pred))
-        elif costfunction == 'Categorical Crossentropy':
+        elif loss_function == 'Categorical Crossentropy':
             #Clip Values, so that 0 does not occur
             y_pred_clipped = np.clip(y_pred, 1e-7, 1-1e-7)
             #Calculate loss
             loss = 1/m * np.sum(-np.log(np.sum(y_pred_clipped*y_onehot,axis=0)))   
-        elif costfunction == 'MSE':
+        elif loss_function == 'MSE':
             loss = 1/m * np.sum(np.square(np.subtract(y_true,y_pred)))
         
         #Calculate loss if regularization is used
@@ -453,7 +453,7 @@ class ConvolutionalNeuralNetwork(Network):
         return y_pred
 
     #Define function for calculating the loss
-    def calculate_Loss(self,y_pred, y_true, costfunction):
+    def calculate_Loss(self,y_pred, y_true, loss_function):
         #Define m as the number of samples
         m = self.num_samples
         #Make one hot vector y_true_onehot
@@ -461,7 +461,7 @@ class ConvolutionalNeuralNetwork(Network):
         y_true_onehot[y_true] = 1
         
         #Check for predetermined loss function and calculate loss
-        if costfunction == 'Categorical Crossentropy':
+        if loss_function == 'Categorical Crossentropy':
             #Clip Values, so that 0 does not occur
             y_pred_clipped = np.clip(y_pred, 1e-7, 1-1e-7)
             loss = 1/m * -np.log(np.sum(y_pred_clipped*y_true_onehot,axis=0))
