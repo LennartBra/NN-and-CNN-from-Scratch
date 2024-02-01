@@ -3,7 +3,7 @@
 ## Table of Contents
 [Description](#Description)\
 [Installation](#Installation)\
-[Structure](#Structure)\
+[Getting Started](#Getting_Started)\
 [Code Example](#CodeExample)\
 [License](#License)
 
@@ -19,7 +19,7 @@ The code is written in Python 3.10.13 and Anaconda was used to create a virtual 
 
 After the installation of the virtual environment you can download, open and execute the scripts. Tensorflow and Sklearn were used to get datasets and compare results to the own implementation. 
 
-## Structure
+## Getting Started
 This section gives you information on the structure of the project by taking a quick look at the scripts in the project. Besides you can find information on class diagrams for the project.
 
 ### Project Structure
@@ -34,12 +34,13 @@ Here you can see the conceptual class diagram of the project:
 
 If you want to take a look at a class diagram which gives you more information on the implementation, take a look at the class diagrams directory in the repository. You can find more detailed class diagrams there.
 
+### Documentation
+This section functions as a short documentation for the functions of the Network script.
+
 ## Code Example
 Down below you can find a screenshot of a code example that I have made. First I loaded the Iris dataset and preprocessed it slightly. Afterwards I initialized the NN model with hyperparameters and trained the model afterwards. Then I plotted the accuracy and the loss over the epochs and tested the network on the test data.
 ![Programmierprojekt-CodeExample](https://github.com/LennartBra/CNN-from-Scratch/assets/114747248/82d97181-6ec0-4f24-b943-975596e0b91e)
 
-## Documentation
-This section functions as a short documentation for the functions of the Network script.
 
 
 ## License
