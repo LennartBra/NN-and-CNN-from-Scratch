@@ -13,7 +13,7 @@ The code is written in Python 3.10.13 and Anaconda was used to create a virtual 
 After the installation of the virtual environment you can download, open and execute the scripts. Tensorflow and Sklearn were used to get datasets and compare results to the own implementation. 
 
 ## Getting started with the project
-This section gives you information on the structure of the project and how to get started with it. You can also find an conceptual UML-diagram of the project and and the most important functions to work with the proejct.
+This section gives you information on the structure of the project by taking a quick look at the scripts in the project. Besides you can find information on class diagrams for the project and a code example.
 
 ### Project Structure
 The projects consists of three different scripts and down below you can find short descriptions of the scripts
@@ -21,11 +21,16 @@ The projects consists of three different scripts and down below you can find sho
 - 'Model.py': Implementation of the models; Script for the NN class and the CNN class
 - 'Layer.py': Implementation of the layers for NNs and CNNs
 
-### Code Example
-Down below you can find a screenshot of a code example that I have made. First I loaded the dataset and preprocessed it slightly. Afterwards I initialized the NN model and trained the model with some hyperparameters. Then I plotted the accuracy and the loss over the epochs and tested the network on the test data.
-
 ### UML-diagram
+Here you can see the conceptual class diagram of the project:
 ![Klassendiagramm-Conceptual](https://github.com/LennartBra/CNN-from-Scratch/assets/114747248/495dbbdf-97fe-4018-a03b-4406eea45771)
+
+If you want to take a look at a class diagram which gives you more information on the implementation, take a look at the class diagrams directory in the repository. You can find more detailed class diagrams there.
+
+### Code Example
+Down below you can find a screenshot of a code example that I have made. First I loaded the Iris dataset and preprocessed it slightly. Afterwards I initialized the NN model with hyperparameters and trained the model afterwards. Then I plotted the accuracy and the loss over the epochs and tested the network on the test data.
+![Programmierprojekt-CodeExample](https://github.com/LennartBra/CNN-from-Scratch/assets/114747248/82d97181-6ec0-4f24-b943-975596e0b91e)
+
 
 ## License
 MIT License
