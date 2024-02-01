@@ -25,7 +25,8 @@ The projects consists of three different scripts and down below you can find sho
 Down below you can find a screenshot of a code example that I have made. First I loaded the dataset and preprocessed it slightly. Afterwards I initialized the NN model and trained the model with some hyperparameters. Then I plotted the accuracy and the loss over the epochs and tested the network on the test data.
 
 ### UML-diagram
-![Alt text](https://github.com/LennartBra/CNN-from-Scratch/tree/master/ClassDiagrams?raw=true)
+![Klassendiagramm-Conceptual](https://github.com/LennartBra/CNN-from-Scratch/assets/114747248/495dbbdf-97fe-4018-a03b-4406eea45771)
+
 ## License
 MIT License
 
