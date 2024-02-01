@@ -5,8 +5,7 @@ This project has the aim to build a library for a Neural Network (NN) and a Conv
 
 ## Table of Contents
 [Installation](#Installation)
-[Getting Started with the project](#Getting started with the project)
-
+[Getting Started with the project](#Gettingstartedwiththeproject)
 [License](#License)
 ## Installation
 The code is written in Python 3.10.13 and Anaconda was used to create a virtual environment for the project. The following packages were installed in that virtual environment:
