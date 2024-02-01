@@ -1,10 +1,10 @@
 # Neural Network and Convolutional Neural Network from Scratch
 
 ## Table of Contents
-[Description](#Description)
-[Installation](#Installation)
-[Structure](#Structure)
-[License](#License)
+[Description](#Description)\
+[Installation](#Installation)\
+[Structure](#Structure)\
+[License](#License)\
 
 ## Description
 This project has the aim to build a library for a Neural Network (NN) and a Convolutional Neural Network (CNN) from scratch to better understand the way neural networks work. Besides this project is part of my programming project for my study at Fachhochschule Dortmund. The project provides typical functions of neural networks to implement machine learning and apply it to a task. All functions were written from scratch, only numpy and matplotlib were used for the development of the functions. Until now this project provides a general and simple library and the goal is to successively extend the library by adding more layers, functions and tuneable hyperparameters for the models.
