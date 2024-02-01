@@ -13,7 +13,7 @@ The code is written in Python 3.10.13 and Anaconda was used to create a virtual 
 After the installation of the virtual environment you can download, open and execute the scripts. Tensorflow and Sklearn were used to get datasets and compare results to the own implementation. 
 
 ## Getting started with the project
-This section gives you information on the structure of the project and how to get started with it. You can also find an UML-diagram of the project and and the most important functions to work with the proejct.
+This section gives you information on the structure of the project and how to get started with it. You can also find an conceptual UML-diagram of the project and and the most important functions to work with the proejct.
 
 ### Project Structure
 The projects consists of three different scripts and down below you can find short descriptions of the scripts
@@ -25,7 +25,7 @@ The projects consists of three different scripts and down below you can find sho
 Down below you can find a screenshot of a code example that I have made. First I loaded the dataset and preprocessed it slightly. Afterwards I initialized the NN model and trained the model with some hyperparameters. Then I plotted the accuracy and the loss over the epochs and tested the network on the test data.
 
 ### UML-diagram
-
+![Alt text](https://github.com/LennartBra/CNN-from-Scratch/tree/master/ClassDiagrams)
 ## License
 MIT License
 
