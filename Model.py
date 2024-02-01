@@ -7,7 +7,7 @@ Autor: Lennart Brakelmann
 import numpy as np
 import matplotlib.pyplot as plt
 
-#Parent class
+#Parent class Network
 class Network:
     #Function for plotting the accuracy over the epochs
     def plot_acc(self):

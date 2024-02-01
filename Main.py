@@ -33,8 +33,6 @@ from tensorflow.keras import Sequential
 X, y = datasets.load_iris(return_X_y=True)
 
 #Standardize Data
-scaler = StandardScaler()
-#X_standardized = scaler.fit_transform(X)
 X_standardized = standardize_data(X)
 
 #Split into Train and Test dataset
@@ -53,7 +51,8 @@ Neural_Network.he_xavier_weight_initialization()
 Neural_Network.print_model_structure()
 
 #Train Neural Network
-Neural_Network.train(X_train, y_train ,learning_rate=0.01, loss_function='Categorical Crossentropy',epochs = 40,batch_size = 32, optimizer = 'Adam')
+Neural_Network.train(X_train, y_train ,learning_rate=0.01, loss_function='Categorical Crossentropy',
+                     epochs = 40,batch_size = 32, optimizer = 'Adam')
 #Pull Cost and Accuracy log
 acc = Neural_Network.accs
 cost = Neural_Network.costs
