@@ -3,8 +3,8 @@
 ## Table of Contents
 [Description](#Description)\
 [Installation](#Installation)\
-[Getting Started](#Getting_Started)\
-[Code Example](#CodeExample)\
+[Getting Started](#Getting-Started)\
+[Code Example](#Code-Examples)\
 [License](#License)
 
 ## Description
@@ -37,7 +37,7 @@ If you want to take a look at a class diagram which gives you more information o
 ### Documentation
 This section functions as a short documentation for the functions of the Network script.
 
-## Code Example
+## Code Examples
 Down below you can find a screenshot of a code example that I have made. First I loaded the Iris dataset and preprocessed it slightly. Afterwards I initialized the NN model with hyperparameters and trained the model afterwards. Then I plotted the accuracy and the loss over the epochs and tested the network on the test data.
 ![Programmierprojekt-CodeExample](https://github.com/LennartBra/CNN-from-Scratch/assets/114747248/82d97181-6ec0-4f24-b943-975596e0b91e)
 
