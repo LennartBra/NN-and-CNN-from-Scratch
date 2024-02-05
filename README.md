@@ -5,7 +5,7 @@
 [2. Installation](#2.-Installation)\
 [3. Getting Started](#3.-Getting-Started)\
 [4. Code Examples](#4.-Code-Examples)\
-[5. License](#5.-License)
+[5. License](#License)
 
 ## 1. Description
 This project has the aim to build a library for a Neural Network (NN) and a Convolutional Neural Network (CNN) from scratch to better understand the way neural networks work. Besides this project is part of my programming project for my study at Fachhochschule Dortmund. The project provides typical functions of neural networks to implement machine learning and apply it to a task. All functions were written from scratch, only numpy and matplotlib were used for the development of the functions. Until now this project provides a general and simple library for Multilayer Perceptrons and CNNs and the goal is to successively extend the library by adding more layers, functions and tuneable hyperparameters for the models. 
@@ -69,7 +69,7 @@ Down below you can find a screenshot of a code example that I have made for trai
 Here I trained a simple CNN on the Digit MNIST dataset. First I loaded the dataset and normalized the pixel values. Afterwards I changed the dimensions of the data to make it fit to the training algorithm. Then I initialized the CNN with some hyperparameters and fitted the network to the data. Afterwards I tested the network on the test data and plotted the accuracy and loss.
 ![Programmierprojekt-CNN-CodeExample](https://github.com/LennartBra/NN-and-CNN-from-Scratch/assets/114747248/2a9bee1b-f11f-4b3a-b29d-8ead119348ca)
 
-## 5. License
+## License
 MIT License
 
 
