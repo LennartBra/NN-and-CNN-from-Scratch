@@ -4,7 +4,7 @@
 [1. Description](#1.-Description)\
 [2. Installation](#2.-Installation)\
 [3. Getting Started](#3.-Getting-Started)\
-[4. Code Examples](#4.-Code-Examples)\
+[4. Code Examples](#4.Code-Examples)\
 [5. License](#License)
 
 ## 1. Description
