@@ -4,7 +4,7 @@
 [Description](#Description)\
 [Installation](#Installation)\
 [Getting Started](#Getting-Started)\
-[Code Example](#Code-Examples)\
+[Code Examples](#Code-Examples)\
 [License](#License)
 
 ## Description
@@ -28,20 +28,25 @@ The projects consists of three different scripts and down below you can find sho
 - 'Model.py': Implementation of the models; Script for the NN class and the CNN class
 - 'Layer.py': Implementation of the layers for NNs and CNNs
 
-### UML-diagram
+### Class-Diagram
 Here you can see the conceptual class diagram of the project:
 ![Klassendiagramm-Conceptual](https://github.com/LennartBra/CNN-from-Scratch/assets/114747248/495dbbdf-97fe-4018-a03b-4406eea45771)
 
 If you want to take a look at a class diagram which gives you more information on the implementation, take a look at the class diagrams directory in the repository. You can find more detailed class diagrams there.
 
 ### Documentation
-This section functions as a short documentation for the functions of the Network script.
+For this project I didn´t make a documentation with a program like Doxygen or Sphinx. But I have made many commentaries throughout the whole code. That means that you will find commentaries in the code which explain the functions, classes and variables I have used.
 
 ## Code Examples
-Down below you can find a screenshot of a code example that I have made. First I loaded the Iris dataset and preprocessed it slightly. Afterwards I initialized the NN model with hyperparameters and trained the model afterwards. Then I plotted the accuracy and the loss over the epochs and tested the network on the test data.
-![Programmierprojekt-CodeExample](https://github.com/LennartBra/CNN-from-Scratch/assets/114747248/82d97181-6ec0-4f24-b943-975596e0b91e)
+In this section you can find two code examples. In the first code example I trained a Multilayer Perceptron and in the second example I trained a simple Convolutional Neural Network.
 
+### Training a Multilayer Perceptron
+Down below you can find a screenshot of a code example that I have made for training a Multilayer Perceptron on the Iris dataset. First I loaded the Iris dataset and preprocessed it slightly. Afterwards I initialized the NN model with hyperparameters and trained the model afterwards. Then I plotted the accuracy and the loss over the epochs and tested the network on the test data.
+![Programmierprojekt-NN-CodeExample](https://github.com/LennartBra/NN-and-CNN-from-Scratch/assets/114747248/85382644-84d4-46e1-a4f9-7b34d3c6789e)
 
+### Training a CNN
+Here I trained a simple CNN on the Digit MNIST dataset. First I loaded the dataset and normalized the pixel values. Afterwards I changed the dimensions of the data to make it fit to the training algorithm. Then I initialized the CNN with some hyperparameters and fitted the network to the data. Afterwards I tested the network on the test data and plotted the accuracy and loss.
+![Programmierprojekt-CNN-CodeExample](https://github.com/LennartBra/NN-and-CNN-from-Scratch/assets/114747248/2a9bee1b-f11f-4b3a-b29d-8ead119348ca)
 
 ## License
 MIT License
