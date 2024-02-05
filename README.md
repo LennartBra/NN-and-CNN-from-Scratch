@@ -35,7 +35,12 @@ Here you can see the conceptual class diagram of the project:
 If you want to take a look at a class diagram which gives you more information on the implementation, take a look at the class diagrams directory in the repository. You can find more detailed class diagrams there.
 
 ### Documentation
-For this project I didn´t make a documentation with a program like Doxygen or Sphinx. But I have made many commentaries throughout the whole code. That means that you will find commentaries in the code which explain the functions, classes and variables I have used.
+For this project I didn´t make a documentation with a program like Doxygen or Sphinx. But I have made many commentaries throughout the whole code. That means that you can find commentaries in the code which explain the functions, classes and variables I have written.
+
+### Tuneable Hyperparamters
+If you want to apply machine learning to a task, you can choose between the following hyperparamters.
+Neural Network (Multilayer Perceptron):
+- 
 
 ## Code Examples
 In this section you can find two code examples. In the first code example I trained a Multilayer Perceptron and in the second example I trained a simple Convolutional Neural Network.
