@@ -1,4 +1,4 @@
-# Neural Network and Convolutional Neural Network from Scratch
+# Multilayer Perceptron and Convolutional Neural Network from Scratch
 
 ## Table of Contents
 [1. Description](#Description)\
@@ -8,7 +8,7 @@
 [5. License](#License)
 
 ## Description
-This project has the aim to build a library for a Neural Network (NN) and a Convolutional Neural Network (CNN) from scratch to better understand the way neural networks work. Besides this project is part of my programming project for my study at Fachhochschule Dortmund. The project provides typical functions of neural networks to implement machine learning and apply it to a task. All functions were written from scratch, only numpy and matplotlib were used for the development of the functions. Until now this project provides a general and simple library for Multilayer Perceptrons and CNNs and the goal is to successively extend the library by adding more layers, functions and tuneable hyperparameters for the models. 
+This project has the aim to build a library for a Multilayer Perceptron (MLP) and a Convolutional Neural Network (CNN) from scratch to better understand the way neural networks work. Besides this project is part of my programming project for my study at Fachhochschule Dortmund. The project provides typical functions of neural networks to implement machine learning and apply it to a task. All functions were written from scratch, only numpy and matplotlib were used for the development of the functions. Until now this project provides a general and simple library for Multilayer Perceptrons and CNNs and the goal is to successively extend the library by adding more layers, functions and tuneable hyperparameters for the models. 
 
 ## Installation
 The code is written in Python 3.10.13 and Anaconda was used to create a virtual environment for the project. The following packages were installed in that virtual environment:
@@ -63,7 +63,8 @@ In this section you can find two code examples. In the first code example I trai
 
 ### Training a Multilayer Perceptron
 Down below you can find a screenshot of a code example that I have made for training a Multilayer Perceptron on the Iris dataset. First I loaded the Iris dataset and preprocessed it slightly. Afterwards I initialized the NN model with hyperparameters and trained the model afterwards. Then I plotted the accuracy and the loss over the epochs and tested the network on the test data.
-![Programmierprojekt-NN-CodeExample](https://github.com/LennartBra/NN-and-CNN-from-Scratch/assets/114747248/85382644-84d4-46e1-a4f9-7b34d3c6789e)
+![Programmierprojekt-MLP-CodeExample](https://github.com/LennartBra/NN-and-CNN-from-Scratch/assets/114747248/d4c834ec-d41a-4de1-a819-3b03e3525431)
+
 
 ### Training a CNN
 Here I trained a simple CNN on the Digit MNIST dataset. First I loaded the dataset and normalized the pixel values. Afterwards I changed the dimensions of the data to make it fit to the training algorithm. Then I initialized the CNN with some hyperparameters and fitted the network to the data. Afterwards I tested the network on the test data and plotted the accuracy and loss.
