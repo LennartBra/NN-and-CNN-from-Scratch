@@ -62,15 +62,15 @@ class Dense:
         # Apply Activation Function depending on desired Function in Neural Network
         match self.ActivationFunction:
             case 'ReLU':
-                self.A = ReLU(self.Z)
+                self.A = relu(self.Z)
             case 'Leaky_ReLU':
-                self.A = Leaky_ReLU(self.Z)
+                self.A = leaky_relu(self.Z)
             case 'tanh':
                 self.A = tanh(self.Z)
             case 'Sigmoid':
-                self.A = Sigmoid(self.Z)
+                self.A = sigmoid(self.Z)
             case 'Softmax':
-                self.A = Softmax(self.Z)
+                self.A = softmax(self.Z)
             case 'None':
                 self.A = self.Z
 
@@ -78,15 +78,15 @@ class Dense:
         #Calculate dZ depending on activation function
         match self.ActivationFunction:
             case 'ReLU':
-                self.dZ = ReLU_backward(dA, self.activation_cache)
+                self.dZ = relu_backward(dA, self.activation_cache)
             case 'Leaky_ReLU':
-                self.dZ = Leaky_ReLU_backward(dA, self.activation_cache)
+                self.dZ = leaky_relu_backward(dA, self.activation_cache)
             case 'tanh':
                 self.dZ = tanh_backward(dA, self.activation_cache)
             case 'Sigmoid':
-                self.dZ = Sigmoid_backward(dA, self.activation_cache)
+                self.dZ = sigmoid_backward(dA, self.activation_cache)
             case 'Softmax':
-                self.dZ = Softmax_backward(dA, self.A)
+                self.dZ = softmax_backward(dA, self.A)
             case 'None':
                 self.dZ = dA
         
@@ -192,7 +192,7 @@ class Convolutional:
         self.activation_cache = feature_maps
         
         #Apply Activation Function to feature maps
-        feature_maps = ReLU(feature_maps)
+        feature_maps = relu(feature_maps)
 
         #Store feature maps in A
         self.A = feature_maps
@@ -201,7 +201,7 @@ class Convolutional:
         
     def backward(self, dA):
         #Apply Relu Activation Function backward
-        dA = ReLU_backward(dA, self.activation_cache)
+        dA = relu_backward(dA, self.activation_cache)
         
         #Initialize dA_prev, dW and db
         dA_prev = np.zeros_like(self.A_prev)
@@ -224,7 +224,8 @@ class Convolutional:
                 #Calculate dW
                 dW_temp = self.convolve(A_prev[:,:,c], dA[:,:,i])
                 dW[i,:,:,c] = dW_temp
-            
+                
+                #Calculate dA_prev
                 #dA_prev[:,:,c] += self.convolve(dA_padded[:,:,i], self.conv_filter[i,:,:,c])
         
         #Save dW and dA_prev as class variables to keep track of them
@@ -360,15 +361,15 @@ class FullyConnected:
         # Apply Activation Function depending on desired Function in Neural Network
         match self.ActivationFunction:
             case 'ReLU':
-                self.A = ReLU(self.Z)
+                self.A = relu(self.Z)
             case 'Leaky_ReLU':
-                self.A = Leaky_ReLU(self.Z)
+                self.A = leaky_relu(self.Z)
             case 'tanh':
                 self.A = tanh(self.Z)
             case 'Sigmoid':
-                self.A = Sigmoid(self.Z)
+                self.A = sigmoid(self.Z)
             case 'Softmax':
-                self.A = Softmax(self.Z)
+                self.A = softmax(self.Z)
                 self.A = np.squeeze(self.A)
             case 'None':
                 self.A = self.Z
@@ -377,15 +378,15 @@ class FullyConnected:
         #Calculate dZ depending on activation function
         match self.ActivationFunction:
             case 'ReLU':
-                self.dZ = ReLU_backward(dA, self.activation_cache)
+                self.dZ = relu_backward(dA, self.activation_cache)
             case 'Leaky_ReLU':
-                self.dZ = Leaky_ReLU_backward(dA, self.activation_cache)
+                self.dZ = leaky_relu_backward(dA, self.activation_cache)
             case 'tanh':
                 self.dZ = tanh_backward(dA, self.activation_cache)
             case 'Sigmoid':
-                self.dZ = Sigmoid_backward(dA, self.activation_cache)
+                self.dZ = sigmoid_backward(dA, self.activation_cache)
             case 'Softmax':
-                self.dZ = Softmax_backward(dA, self.A)
+                self.dZ = softmax_backward(dA, self.A)
                 self.dZ = np.expand_dims(self.dZ, axis=1)
             case 'None':
                 self.dZ = dA
@@ -414,36 +415,36 @@ class FullyConnected:
 #%%Define all Activation Functions for forward and backward path
 
 #Define ReLu activation function forward
-def ReLU(Z):
+def relu(Z):
     A = np.maximum(0, Z)
     return A
 
 #Define ReLu activation function backward
-def ReLU_backward(dA, cache):
+def relu_backward(dA, cache):
     Z = cache
     s = np.where(Z <= 0, 0.0, 1.0)
     dZ = dA * s
     return dZ
     
 #Define Leaky_ReLu activation function forward
-def Leaky_ReLU(Z, alpha=0.1):
+def leaky_relu(Z, alpha=0.1):
     A = np.where(Z > 0, Z, Z * alpha)
     return A
 
 #Define Leaky_ReLu activation function backward
-def Leaky_ReLU_backward(dA, cache, alpha=0.1):
+def leaky_relu_backward(dA, cache, alpha=0.1):
     Z = cache
     s = np.where(Z <= 0, alpha, 1.0)
     dZ = dA * s
     return dZ
 
 #Define Sigmoid activation function forward
-def Sigmoid(Z):
+def sigmoid(Z):
     A = 1 / (1 + np.exp(-Z))
     return A
 
 #Define Sigmoid activation function backward
-def Sigmoid_backward(dA, cache):
+def sigmoid_backward(dA, cache):
     Z = cache
     s = 1/(1 + np.exp(-Z))
     dZ = dA * s * (1-s)
@@ -462,14 +463,14 @@ def tanh_backward(dA, cache):
     return dZ
   
 #Define Softmax activation function forward
-def Softmax(Z):
+def softmax(Z):
     exp_values = np.exp(Z - np.max(Z, axis=0, keepdims=True))
     probabilities = exp_values / np.sum(exp_values, axis=0, keepdims=True)
     A = probabilities
     return A
 
 #Define Softmax activation functiokn backward
-def Softmax_backward(dA, A_pred):
+def softmax_backward(dA, A_pred):
     #Calculate Derivative of Loss function w.r.t. Z
     dZ = A_pred - dA
     #print(f'A_pred:{A_pred.shape}, dA:{dA.shape}, dZ:{dZ.shape}')

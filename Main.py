@@ -7,8 +7,16 @@ Autor: Lennart Brakelmann
 #%% Import packages and modules
 import numpy as np
 import Layer
-from Model import NeuralNetwork, ConvolutionalNeuralNetwork
+from Model import MultilayerPerceptron, ConvolutionalNeuralNetwork
 import matplotlib.pyplot as plt
+
+#Sklearn and Tensorflow packages for comparison
+from sklearn import datasets
+from sklearn.model_selection import train_test_split
+from sklearn.metrics import accuracy_score
+import tensorflow as tf
+from tensorflow.keras import layers
+from tensorflow.keras import Sequential
 
 #Define Function to Standardize Data
 def standardize_data(X):
@@ -20,14 +28,17 @@ def standardize_data(X):
 
     return X_standardized, mu, sigma
 
-#%% Neural Network - Iris dataset
-from sklearn import datasets
-from sklearn.model_selection import train_test_split
-from sklearn.preprocessing import StandardScaler
-from sklearn.metrics import accuracy_score
-import tensorflow as tf
-from tensorflow.keras import layers
-from tensorflow.keras import Sequential
+#Define function to calculate accuracy
+def calculate_accuracy(y_pred, y_true):
+    y_pred = np.array(y_pred)
+    y_true = np.array(y_true)
+    
+    correct = np.sum(y_pred==y_true)
+    acc = correct/ len(y_true)
+    
+    return acc
+
+#%% Multilayer Perceptron - Iris dataset
 
 #Import Dataset
 X, y = datasets.load_iris(return_X_y=True)
@@ -39,52 +50,49 @@ X_standardized = standardize_data(X)
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
 
 #Create NeuralNetwork Object
-Neural_Network = NeuralNetwork()
+Multilayer_Perceptron = MultilayerPerceptron()
 #Add Layers to Neural Network --> Define Network Structure
-Neural_Network.add(Layer.Dense(4,500,'ReLU', Dropout_keep_prob=0.7))
-Neural_Network.add(Layer.Dense(500,300,'ReLU'))
-Neural_Network.add(Layer.Dense(300,3,'Softmax'))
+Multilayer_Perceptron.add(Layer.Dense(4,500,'ReLU', Dropout_keep_prob=0.7))
+Multilayer_Perceptron.add(Layer.Dense(500,300,'ReLU'))
+Multilayer_Perceptron.add(Layer.Dense(300,3,'Softmax'))
 #Initialize weights with He and Xavier Method
-Neural_Network.he_xavier_weight_initialization()
+Multilayer_Perceptron.he_xavier_weight_initialization()
 
 #Print Neural Network Structure
-Neural_Network.print_model_structure()
+Multilayer_Perceptron.print_model_structure()
 
 #Train Neural Network
-Neural_Network.train(X_train, y_train ,learning_rate=0.01, loss_function='Categorical Crossentropy',
+Multilayer_Perceptron.train(X_train, y_train ,learning_rate=0.01, loss_function='Categorical Crossentropy',
                      epochs = 40,batch_size = 32, optimizer = 'Adam')
-#Pull Cost and Accuracy log
-acc = Neural_Network.accs
-cost = Neural_Network.costs
 
 #Make prediction for test data
-y_pred_NN = Neural_Network.predict(X_test)
+y_pred_NN = Multilayer_Perceptron.predict(X_test)
 #Calculate accuracy for test data
 acc_NN = accuracy_score(y_test, y_pred_NN)
 
 #Plot accuracy and loss of Neural Network for training data
-Neural_Network.plot_acc()
-Neural_Network.plot_loss()
+Multilayer_Perceptron.plot_acc()
+Multilayer_Perceptron.plot_loss()
 
 ###############################################################################
-#####################Create Neural Network with Keras library##################
+################Create Multilayer Perceptron with Keras library################
 ###############################################################################
 #One Hot Encode y_train
 y_train = tf.keras.utils.to_categorical(y_train)
 
 #Create Model for Neural Network
-model=Sequential()
+MLP_Keras = Sequential()
 #Add Layers to Neural Network
-model.add(layers.Dense(500,input_dim=4,activation='relu', kernel_initializer='he_normal'))
-model.add(layers.Dense(300,activation='relu', kernel_initializer='he_normal'))
-model.add(layers.Dense(3,activation='softmax'))
-model.compile(optimizer=tf.keras.optimizers.Adam(learning_rate=0.01),loss='categorical_crossentropy', metrics=['accuracy'])
+MLP_Keras.add(layers.Dense(500,input_dim=4,activation='relu', kernel_initializer='he_normal'))
+MLP_Keras.add(layers.Dense(300,activation='relu', kernel_initializer='he_normal'))
+MLP_Keras.add(layers.Dense(3,activation='softmax'))
+MLP_Keras.compile(optimizer=tf.keras.optimizers.Adam(learning_rate=0.01),loss='categorical_crossentropy', metrics=['accuracy'])
 
 #Train Model with training data
-history = model.fit(X_train, y_train, epochs=40, batch_size=32, verbose=1)
+history = MLP_Keras.fit(X_train, y_train, epochs=40, batch_size=32, verbose=1)
 
 #Make Prediction for test data
-y_pred_keras = np.argmax(model.predict(X_test), axis=1)
+y_pred_keras = np.argmax(MLP_Keras.predict(X_test), axis=1)
 #Calculate accuracy for test data
 acc_keras = accuracy_score(y_test, y_pred_keras)
 
@@ -104,25 +112,9 @@ plt.xlabel( 'epoch' )
 plt.legend([ 'loss' ], loc= 'upper left' )
 plt.show()
 
-#%% Test Neural Network on TestData --> Iris Dataset
-def calculate_accuracy(y_pred, y_true):
-    y_pred = np.array(y_pred)
-    y_true = np.array(y_true)
-    
-    correct = np.sum(y_pred==y_true)
-    acc = correct/ len(y_true)
-    
-    return acc
-
-y_pred_test = Neural_Network.predict(X_test)
-
-acc = calculate_accuracy(y_pred_test, y_test)
 
 
-
-#%% Test CNN on mnist dataset
-import tensorflow as tf
-from sklearn.metrics import accuracy_score
+#%% CNN for Digit MNIST dataset
 
 #Function to plot two images side by side
 def plot_two_images(img1, img2):
@@ -137,12 +129,12 @@ def plot_two_images(img1, img2):
 X_train_mnist = X_train_mnist / 255
 X_test_mnist = X_test_mnist / 255
 
-#Change dimensions to make data suitable for CNN
+#Add 1 dimension to data --> image format must be (28,28,1)
 X_train_mnist = np.expand_dims(X_train_mnist, axis=3)
 X_test_mnist = np.expand_dims(X_test_mnist, axis=3)
 
 #Plot two images as examples to see what the data looks like
-plot_two_images(X_train_mnist[499,:,:,0],X_train_mnist[500,:,:,0])
+plot_two_images(X_train_mnist[0,:,:,0],X_train_mnist[1,:,:,0])
 
 #Create CNN model and add layers to the model
 CNN_mnist = ConvolutionalNeuralNetwork()
@@ -151,21 +143,9 @@ CNN_mnist.add(Layer.Max_Pooling(pool_size=2))
 CNN_mnist.add(Layer.FullyConnected(10, 'Softmax'))
 
 #Train CNN with training data
-CNN_mnist.train(X_train_mnist[0:3000],y_train_mnist[0:3000],learning_rate=0.01,
-                loss_function='Categorical Crossentropy', epochs=5, batch_size=1,
+CNN_mnist.train(X_train_mnist[30000:35000],y_train_mnist[30000:35000],learning_rate=0.01,
+                loss_function='Categorical Crossentropy', epochs=3, batch_size=1,
                 optimizer='None')
-
-#Take a look at the interim results
-Ergebnis_CNN_mnist = CNN_mnist.layers[0].A
-Ergebnis_padded_image = CNN_mnist.layers[0].padded_image
-Ergebnis_Pooling_mnist = CNN_mnist.layers[1].A
-Ergebnis_Softmax = CNN_mnist.layers[2].A
-
-#Plot the interim results
-plot_two_images(Ergebnis_CNN_mnist[:,:,0], Ergebnis_CNN_mnist[:,:,1])
-plot_two_images(Ergebnis_CNN_mnist[:,:,2],Ergebnis_CNN_mnist[:,:,3])
-plot_two_images(Ergebnis_Pooling_mnist[:,:,0], Ergebnis_Pooling_mnist[:,:,1])
-plot_two_images(Ergebnis_Pooling_mnist[:,:,2],Ergebnis_Pooling_mnist[:,:,3])
 
 #Test CNN on Test Data
 y_pred = CNN_mnist.predict(X_test_mnist[0:500])
@@ -177,7 +157,8 @@ acc_CNN = accuracy_score(y_test_mnist[0:500], y_pred)
 CNN_mnist.plot_acc()
 CNN_mnist.plot_loss()
 
-#%%Create Keras Sequential Model
+#%% Create CNN with Keras library
+
 #Load Digit MNIST dataset
 (X_train_mnist, y_train_mnist), (X_test_mnist, y_test_mnist) = tf.keras.datasets.mnist.load_data()
 

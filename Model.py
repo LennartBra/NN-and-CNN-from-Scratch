@@ -8,7 +8,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 #Parent class Network
-class Network:
+class NeuralNetwork:
     #Function for plotting the accuracy over the epochs
     def plot_acc(self):
         plt.figure()
@@ -59,7 +59,7 @@ class Network:
         
         
 #Child class for Neural Network --> Multilayer Perceptron
-class NeuralNetwork(Network):
+class MultilayerPerceptron(NeuralNetwork):
     
     #Initialize Object
     def __init__(self):
@@ -291,7 +291,7 @@ class NeuralNetwork(Network):
 
 
 #Class for Convolutional Neural Network
-class ConvolutionalNeuralNetwork(Network):
+class ConvolutionalNeuralNetwork(NeuralNetwork):
     #Initialize ConvolutionalNeuralNetwork object
     def __init__(self):
         self.layers = []
@@ -380,7 +380,7 @@ class ConvolutionalNeuralNetwork(Network):
         self.costs = []
         self.accs = []
         self.x_plot = []
-        self.num_classes = 10#int(max(y_true))+1
+        self.num_classes = int(max(y_true))+1
         self.num_samples = len(y_true)
         self.optimizer = optimizer
         self.y_true = y_true
