@@ -30,7 +30,8 @@ The projects consists of three different scripts and here you can find short des
 
 ### Class-Diagram
 Here you can see the conceptual class diagram of the project:
-![Klassendiagramm-Conceptual](https://github.com/LennartBra/CNN-from-Scratch/assets/114747248/495dbbdf-97fe-4018-a03b-4406eea45771)
+![Klassendiagramm-Conceptual](https://github.com/LennartBra/NN-and-CNN-from-Scratch/assets/114747248/545ef52e-6fb1-4cd1-a008-358eae154442)
+
 
 If you want to take a look at a class diagram which gives you more information on the implementation, take a look at the class diagrams directory in the repository. You can find more detailed diagrams there.
 
