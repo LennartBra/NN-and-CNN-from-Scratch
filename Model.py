@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-Class for the model of the Neural Network
+Class for the Neural Network models
 Autor: Lennart Brakelmann
 """
 #Import Packages
@@ -9,6 +9,17 @@ import matplotlib.pyplot as plt
 
 #Parent class Network
 class NeuralNetwork:
+    
+    #Function for calculating accuracy 
+    def calculate_accuracy(self, y_pred, y_true):
+        y_pred = np.array(y_pred)
+        y_true = np.array(y_true)
+        
+        correct = np.sum(y_pred==y_true)
+        acc = correct/ len(y_true)
+        
+        return acc
+    
     #Function for plotting the accuracy over the epochs
     def plot_acc(self):
         plt.figure()
@@ -29,16 +40,6 @@ class NeuralNetwork:
         plt.ylabel('loss')
         plt.legend()
         plt.show()
-        
-    #Function for calculating accuracy 
-    def calculate_accuracy(self, y_pred, y_true):
-        y_pred = np.array(y_pred)
-        y_true = np.array(y_true)
-        
-        correct = np.sum(y_pred==y_true)
-        acc = correct/ len(y_true)
-        
-        return acc
 
     #Function for making a one hot encoded vector    
     def make_onehot_vec(self, y_true, num_classes):
@@ -73,12 +74,11 @@ class MultilayerPerceptron(NeuralNetwork):
     def he_xavier_weight_initialization(self):
         #Iterate through every layer, check activation functions and calculate initial weights
         for layer in self.layers:
-            if layer.ActivationFunction == 'ReLU' or layer.ActivationFunction == 'Leaky_ReLU':
+            if layer.activationfunction == 'ReLU' or layer.activationfunction == 'Leaky_ReLU':
                 layer.weights = np.random.randn(layer.n_neurons, layer.n_inputs) * np.sqrt(2/(layer.n_inputs))
-            elif layer.ActivationFunction == 'Sigmoid' or layer.ActivationFunction == 'tanh':
+            elif layer.activationfunction == 'Sigmoid' or layer.activationfunction == 'tanh':
                 layer.weights = np.random.randn(layer.n_neurons, layer.n_inputs) * np.sqrt(2/(layer.n_inputs+layer.n_neurons))
             
-    
     #Forward Propagation Method for Neural Network
     def forward_propagation(self, A_prev):
         #Propagate forward through every layer
@@ -98,10 +98,9 @@ class MultilayerPerceptron(NeuralNetwork):
                 layer.D = mask
                 
             #Save current Output as input for next layer
-            A_prev = layer.A
-            
             #print(f'Z:{layer.Z}')
             #print(f'A:{layer.A}')
+            A_prev = layer.A
         
     #Backward Propagation Method for Neural Network
     def backward_propagation(self, y_pred, y_true):        
@@ -129,12 +128,10 @@ class MultilayerPerceptron(NeuralNetwork):
             #Use backward function for every layer --> Calculate dA_prev, dW and db
             dA_prev, dW, db = layer.backward(dA_prev)
             #Save dW and db (gradients) in layer.grads for parameter update
-            layer.grads = [dW, db]
-            
             #print(f"dA_prev:{dA_prev}")
             #print(f"dW:{dW}")
             #print(f"db:{db}")
-        
+            layer.grads = [dW, db]
         
     #Function for updating the parameters
     def update_parameters(self, learning_rate):
@@ -183,7 +180,6 @@ class MultilayerPerceptron(NeuralNetwork):
                 #Update weights and bias with vdW, sdW, vdb and sdb
                 layer.weights = layer.weights - learning_rate * (layer.vdW/(np.sqrt(layer.sdW)+epsilon))
                 layer.bias = layer.bias - learning_rate * (layer.vdb/(np.sqrt(layer.sdb)+epsilon))
-            
             
     #Function for training of the Neural Network
     def train(self ,X ,y_true, learning_rate, loss_function, epochs, batch_size='None', optimizer='None'):
@@ -244,14 +240,13 @@ class MultilayerPerceptron(NeuralNetwork):
         #Save Predictions in A_pred
         A_pred = self.layers[-1].A
         #Extract Prediction with highest probability from A_pred and save prediction in y_pred
-        if self.layers[-1].ActivationFunction == 'Sigmoid':
+        if self.layers[-1].activationfunction == 'Sigmoid':
             y_pred = np.zeros(A_pred.shape)
             y_pred = np.where(A_pred > 0.5, 1, 0)
-        elif self.layers[-1].ActivationFunction == 'Softmax':
+        elif self.layers[-1].activationfunction == 'Softmax':
             y_pred = np.argmax(A_pred, axis=0)
         
         return y_pred
-
 
     #Function for calculating the loss of the network
     def calculate_Loss(self, y_pred, y_true, loss_function):
@@ -268,8 +263,6 @@ class MultilayerPerceptron(NeuralNetwork):
             y_pred_clipped = np.clip(y_pred, 1e-7, 1-1e-7)
             #Calculate loss
             loss = 1/m * np.sum(-np.log(np.sum(y_pred_clipped*y_onehot,axis=0)))   
-        elif loss_function == 'MSE':
-            loss = 1/m * np.sum(np.square(np.subtract(y_true,y_pred)))
         
         #Calculate loss if regularization is used
         cost_regularization = 0

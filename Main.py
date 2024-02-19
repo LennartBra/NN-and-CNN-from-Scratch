@@ -49,26 +49,24 @@ X_standardized = standardize_data(X)
 #Split into Train and Test dataset
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
 
-#Create NeuralNetwork Object
+#Create Multilayer Perceptron
 Multilayer_Perceptron = MultilayerPerceptron()
 #Add Layers to Neural Network --> Define Network Structure
-Multilayer_Perceptron.add(Layer.Dense(4,500,'ReLU', Dropout_keep_prob=0.7))
+Multilayer_Perceptron.add(Layer.Dense(4,500,'ReLU',dropout_keep_prob=0.8))
 Multilayer_Perceptron.add(Layer.Dense(500,300,'ReLU'))
 Multilayer_Perceptron.add(Layer.Dense(300,3,'Softmax'))
 #Initialize weights with He and Xavier Method
 Multilayer_Perceptron.he_xavier_weight_initialization()
 
-#Print Neural Network Structure
-Multilayer_Perceptron.print_model_structure()
-
 #Train Neural Network
-Multilayer_Perceptron.train(X_train, y_train ,learning_rate=0.01, loss_function='Categorical Crossentropy',
-                     epochs = 40,batch_size = 32, optimizer = 'Adam')
+Multilayer_Perceptron.train(X_train, y_train ,learning_rate=0.01,
+                            loss_function='Categorical Crossentropy',
+                            epochs = 15,batch_size = 32, optimizer = 'Adam')
 
 #Make prediction for test data
-y_pred_NN = Multilayer_Perceptron.predict(X_test)
+y_pred_MLP = Multilayer_Perceptron.predict(X_test)
 #Calculate accuracy for test data
-acc_NN = accuracy_score(y_test, y_pred_NN)
+acc_MLP = accuracy_score(y_test, y_pred_MLP)
 
 #Plot accuracy and loss of Neural Network for training data
 Multilayer_Perceptron.plot_acc()
@@ -84,12 +82,13 @@ y_train = tf.keras.utils.to_categorical(y_train)
 MLP_Keras = Sequential()
 #Add Layers to Neural Network
 MLP_Keras.add(layers.Dense(500,input_dim=4,activation='relu', kernel_initializer='he_normal'))
+MLP_Keras.add(layers.Dropout(0.2))
 MLP_Keras.add(layers.Dense(300,activation='relu', kernel_initializer='he_normal'))
 MLP_Keras.add(layers.Dense(3,activation='softmax'))
 MLP_Keras.compile(optimizer=tf.keras.optimizers.Adam(learning_rate=0.01),loss='categorical_crossentropy', metrics=['accuracy'])
 
 #Train Model with training data
-history = MLP_Keras.fit(X_train, y_train, epochs=40, batch_size=32, verbose=1)
+history = MLP_Keras.fit(X_train, y_train, epochs=15, batch_size=32, verbose=1)
 
 #Make Prediction for test data
 y_pred_keras = np.argmax(MLP_Keras.predict(X_test), axis=1)
@@ -136,22 +135,22 @@ X_test_mnist = np.expand_dims(X_test_mnist, axis=3)
 #Plot two images as examples to see what the data looks like
 plot_two_images(X_train_mnist[0,:,:,0],X_train_mnist[1,:,:,0])
 
-#Create CNN model and add layers to the model
+#Create CNN model and add layers to the model 
 CNN_mnist = ConvolutionalNeuralNetwork()
 CNN_mnist.add(Layer.Convolutional(num_filters=4, kernel_size=(3,3), input_shape=(28,28,1)))
 CNN_mnist.add(Layer.Max_Pooling(pool_size=2))
 CNN_mnist.add(Layer.FullyConnected(10, 'Softmax'))
 
 #Train CNN with training data
-CNN_mnist.train(X_train_mnist[30000:35000],y_train_mnist[30000:35000],learning_rate=0.01,
-                loss_function='Categorical Crossentropy', epochs=3, batch_size=1,
+CNN_mnist.train(X_train_mnist[0:5000],y_train_mnist[0:5000],learning_rate=0.01,
+                loss_function='Categorical Crossentropy', epochs=2, batch_size=1,
                 optimizer='None')
 
 #Test CNN on Test Data
-y_pred = CNN_mnist.predict(X_test_mnist[0:500])
+y_pred = CNN_mnist.predict(X_test_mnist[0:1000])
 
 #Calculate accuracy
-acc_CNN = accuracy_score(y_test_mnist[0:500], y_pred)
+acc_CNN = accuracy_score(y_test_mnist[0:1000], y_pred)
 
 #Plot accuracy and loss of Convolutional Neural Network for training data
 CNN_mnist.plot_acc()
@@ -180,13 +179,13 @@ CNN_mnist_keras.add(layers.Dense(10, activation='softmax'))
 CNN_mnist_keras.compile(optimizer='adam', loss='categorical_crossentropy', metrics=['accuracy'])
 
 #Fit model to training data
-history_mnist = CNN_mnist_keras.fit(X_train_mnist[0:3000],y_train_mnist[0:3000], batch_size=1, epochs=5)
+history_mnist = CNN_mnist_keras.fit(X_train_mnist[0:5000],y_train_mnist[0:5000], batch_size=1, epochs=10)
 
 #Test trained model on test data
-y_pred_mnist_keras = np.argmax(CNN_mnist_keras.predict(X_test_mnist[0:500]), axis=1)
+y_pred_mnist_keras = np.argmax(CNN_mnist_keras.predict(X_test_mnist[0:1000]), axis=1)
 
 #Calculate accuracy on Test dataset
-acc_CNN_keras = accuracy_score(y_test_mnist[0:500], y_pred_mnist_keras)
+acc_CNN_keras = accuracy_score(y_test_mnist[0:1000], y_pred_mnist_keras)
 
 #Make accuracy plot 
 plt.plot(history_mnist.history[ 'accuracy' ])
@@ -204,36 +203,6 @@ plt.xlabel( 'epoch' )
 plt.legend([ 'loss' ], loc= 'upper left' )
 plt.show()
 
-
-
-
-
-
-
-
-
-#%% Test Neural Network on Fashion Mnist dataset
-#Load Fashion Mnist datset
-(X_train_fashion, y_train_fashion), (X_test_fashion, y_test_fashion) = tf.keras.datasets.fashion_mnist.load_data()
-
-#Normalize the pixel values
-X_train_fashion = X_train_fashion / 255
-X_test_fashion = X_test_fashion / 255
-
-#Change dimensions to make data suitable for CNN
-X_train_fashion = np.expand_dims(X_train_fashion, axis=3)
-X_test_fashion = np.expand_dims(X_test_fashion, axis=3)
-
-#Initialize CNN model and add layers to the model
-CNN_fashion = ConvolutionalNeuralNetwork()
-CNN_fashion.add(Layer.Convolutional(num_filters=8, kernel_size=(3,3), input_shape=(28,28,1)))
-CNN_fashion.add(Layer.Max_Pooling(pool_size=2))
-CNN_fashion.add(Layer.Convolutional(num_filters=16, kernel_size=(3,3), input_ch=8))
-CNN_fashion.add(Layer.FullyConnected(10, 'Softmax'))
-
-#Train CNN model
-CNN_fashion.train(X_train_fashion[0:500],y_train_fashion[0:500],learning_rate=0.01,loss_function='Categorical Crossentropy', epochs=3, batch_size=1)
-   
 
 
 

@@ -17,9 +17,9 @@ import numpy as np
 class Dense:
 
     # Initialize Dense Layer
-    def __init__(self, n_inputs, n_neurons, ActivationFunction, alpha=0.1, L1Reg=0, L2Reg=0, Dropout_keep_prob=0):
+    def __init__(self, n_inputs, n_neurons, activationfunction, alpha=0.1, L1Reg=0, L2Reg=0, dropout_keep_prob=0):
         # Initialize parameters of Dense Layer
-        self.ActivationFunction = ActivationFunction
+        self.activationfunction = activationfunction
         self.n_neurons = n_neurons
         self.n_inputs = n_inputs
         self.type = 'Dense'
@@ -30,8 +30,8 @@ class Dense:
         elif L2Reg > 0:
             self.lambd = L2Reg
             self.reg_type = 'L2'
-        elif Dropout_keep_prob > 0:
-            self.keep_prob = Dropout_keep_prob
+        elif dropout_keep_prob > 0:
+            self.keep_prob = dropout_keep_prob
             self.reg_type = 'Dropout'
             self.D = 0
         else:
@@ -48,8 +48,6 @@ class Dense:
         self.vdb = 0
         self.sdW = 0
         self.sdb = 0
-        
-        
 
     # Program forward path for Dense Layer
     def forward(self, A_prev):
@@ -60,7 +58,7 @@ class Dense:
         # Save input as A_prev for later use in backward path
         self.A_prev = A_prev
         # Apply Activation Function depending on desired Function in Neural Network
-        match self.ActivationFunction:
+        match self.activationfunction:
             case 'ReLU':
                 self.A = relu(self.Z)
             case 'Leaky_ReLU':
@@ -73,10 +71,11 @@ class Dense:
                 self.A = softmax(self.Z)
             case 'None':
                 self.A = self.Z
-
+    
+    #Program backward path for Dense Layer
     def backward(self,dA):
         #Calculate dZ depending on activation function
-        match self.ActivationFunction:
+        match self.activationfunction:
             case 'ReLU':
                 self.dZ = relu_backward(dA, self.activation_cache)
             case 'Leaky_ReLU':
@@ -131,7 +130,6 @@ class Convolutional:
                 input_ch = input_ch
             else:
                 input_ch = input_shape[-1]
-            np.random.seed(2)
             self.conv_filter = 0.1 * np.random.rand(num_filters, kernel_size[0],kernel_size[1], input_ch)
             self.type = 'Conv'
             self.dfilter = 0
@@ -226,7 +224,7 @@ class Convolutional:
                 dW[i,:,:,c] = dW_temp
                 
                 #Calculate dA_prev
-                #dA_prev[:,:,c] += self.convolve(dA_padded[:,:,i], self.conv_filter[i,:,:,c])
+                dA_prev[:,:,c] += self.convolve(dA_padded[:,:,i], self.conv_filter[i,:,:,c])
         
         #Save dW and dA_prev as class variables to keep track of them
         self.dW = dW
