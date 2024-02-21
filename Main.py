@@ -143,7 +143,7 @@ CNN_mnist.add(Layer.FullyConnected(10, 'Softmax'))
 
 #Train CNN with training data
 CNN_mnist.train(X_train_mnist[0:5000],y_train_mnist[0:5000],learning_rate=0.01,
-                loss_function='Categorical Crossentropy', epochs=2, batch_size=1,
+                loss_function='Categorical Crossentropy', epochs=1, batch_size=1,
                 optimizer='None')
 
 #Test CNN on Test Data

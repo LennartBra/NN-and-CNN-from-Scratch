@@ -74,9 +74,9 @@ class MultilayerPerceptron(NeuralNetwork):
     def he_xavier_weight_initialization(self):
         #Iterate through every layer, check activation functions and calculate initial weights
         for layer in self.layers:
-            if layer.activationfunction == 'ReLU' or layer.activationfunction == 'Leaky_ReLU':
+            if layer.activation_function == 'ReLU' or layer.activation_function == 'Leaky_ReLU':
                 layer.weights = np.random.randn(layer.n_neurons, layer.n_inputs) * np.sqrt(2/(layer.n_inputs))
-            elif layer.activationfunction == 'Sigmoid' or layer.activationfunction == 'tanh':
+            elif layer.activation_function == 'Sigmoid' or layer.activation_function == 'tanh':
                 layer.weights = np.random.randn(layer.n_neurons, layer.n_inputs) * np.sqrt(2/(layer.n_inputs+layer.n_neurons))
             
     #Forward Propagation Method for Neural Network
@@ -223,13 +223,13 @@ class MultilayerPerceptron(NeuralNetwork):
             if i%1 == 0:
                 self.forward_propagation(X)
                 y_pred = self.layers[-1].A
-                Loss = self.calculate_Loss(y_pred, y_true, self.model_loss_function)
+                loss = self.calculate_loss(y_pred, y_true, self.model_loss_function)
                 y_pred = self.predict(X.T)
                 acc = self.calculate_accuracy(y_pred, y_true)
-                self.costs.append(Loss)
+                self.costs.append(loss)
                 self.accs.append(acc)
                 self.x_plot.append(i+1)
-                print(f'Epoch:{i+1}, Loss: {Loss}, Acc: {acc}') 
+                print(f'Epoch:{i+1}, Loss: {loss}, Acc: {acc}') 
     
     #Function for making a prediction with trained network
     def predict(self,X):
@@ -240,16 +240,16 @@ class MultilayerPerceptron(NeuralNetwork):
         #Save Predictions in A_pred
         A_pred = self.layers[-1].A
         #Extract Prediction with highest probability from A_pred and save prediction in y_pred
-        if self.layers[-1].activationfunction == 'Sigmoid':
+        if self.layers[-1].activation_function == 'Sigmoid':
             y_pred = np.zeros(A_pred.shape)
             y_pred = np.where(A_pred > 0.5, 1, 0)
-        elif self.layers[-1].activationfunction == 'Softmax':
+        elif self.layers[-1].activation_function == 'Softmax':
             y_pred = np.argmax(A_pred, axis=0)
         
         return y_pred
 
     #Function for calculating the loss of the network
-    def calculate_Loss(self, y_pred, y_true, loss_function):
+    def calculate_loss(self, y_pred, y_true, loss_function):
         #Initialize m --> number of samples
         m = y_pred.shape[1]
         #Make one hot vector y_onehot from y_true
@@ -410,7 +410,7 @@ class ConvolutionalNeuralNetwork(NeuralNetwork):
                     if np.argmax(y_pred, axis=0) == y_in:
                         correct_predictions += 1
                     #Calculate loss
-                    loss = self.calculate_Loss(y_pred, y_in, self.model_loss_function)
+                    loss = self.calculate_loss(y_pred, y_in, self.model_loss_function)
                     #Add loss to total loss
                     total_loss += loss
                     #Propagate backward through network and calculate gradients
@@ -446,7 +446,7 @@ class ConvolutionalNeuralNetwork(NeuralNetwork):
         return y_pred
 
     #Define function for calculating the loss
-    def calculate_Loss(self,y_pred, y_true, loss_function):
+    def calculate_loss(self,y_pred, y_true, loss_function):
         #Define m as the number of samples
         m = self.num_samples
         #Make one hot vector y_true_onehot

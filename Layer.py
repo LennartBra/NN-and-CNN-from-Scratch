@@ -17,9 +17,9 @@ import numpy as np
 class Dense:
 
     # Initialize Dense Layer
-    def __init__(self, n_inputs, n_neurons, activationfunction, alpha=0.1, L1Reg=0, L2Reg=0, dropout_keep_prob=0):
+    def __init__(self, n_inputs, n_neurons, activation_function, alpha=0.1, L1Reg=0, L2Reg=0, dropout_keep_prob=0):
         # Initialize parameters of Dense Layer
-        self.activationfunction = activationfunction
+        self.activation_function = activation_function
         self.n_neurons = n_neurons
         self.n_inputs = n_inputs
         self.type = 'Dense'
@@ -58,7 +58,7 @@ class Dense:
         # Save input as A_prev for later use in backward path
         self.A_prev = A_prev
         # Apply Activation Function depending on desired Function in Neural Network
-        match self.activationfunction:
+        match self.activation_function:
             case 'ReLU':
                 self.A = relu(self.Z)
             case 'Leaky_ReLU':
@@ -75,7 +75,7 @@ class Dense:
     #Program backward path for Dense Layer
     def backward(self,dA):
         #Calculate dZ depending on activation function
-        match self.activationfunction:
+        match self.activation_function:
             case 'ReLU':
                 self.dZ = relu_backward(dA, self.activation_cache)
             case 'Leaky_ReLU':
@@ -327,14 +327,14 @@ class Max_Pooling:
 #Define FullyConnected Layer
 class FullyConnected:
     #Initialie FullyConnnected Layer
-    def __init__(self, n_neurons, ActivationFunction):
+    def __init__(self, n_neurons, activation_function):
         #Initialize important variables
         np.random.seed(2)
         self.n_inputs = 0
         self.n_neurons = n_neurons
         #self.weights = 0.1 * np.random.rand(n_neurons, n_inputs)
         self.bias = np.zeros((n_neurons, 1))
-        self.ActivationFunction = ActivationFunction
+        self.activation_function = activation_function
         self.type = 'FCL'
         self.grads = []
     
@@ -357,7 +357,7 @@ class FullyConnected:
 
         
         # Apply Activation Function depending on desired Function in Neural Network
-        match self.ActivationFunction:
+        match self.activation_function:
             case 'ReLU':
                 self.A = relu(self.Z)
             case 'Leaky_ReLU':
@@ -374,7 +374,7 @@ class FullyConnected:
 
     def backward(self, dA):
         #Calculate dZ depending on activation function
-        match self.ActivationFunction:
+        match self.activation_function:
             case 'ReLU':
                 self.dZ = relu_backward(dA, self.activation_cache)
             case 'Leaky_ReLU':
