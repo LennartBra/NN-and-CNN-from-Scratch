@@ -24,9 +24,9 @@ This section gives you information on the structure of the project by taking a q
 
 ### Project Structure
 The projects consists of three different scripts and here you can find short descriptions of the scripts:
-- 'Main.py': Load datasets, preprocess data; Build, train and evaluate NN and CNN
-- 'Model.py': Implementation of the models; Script for the NN class and the CNN class
-- 'Layer.py': Implementation of the layers for NNs and CNNs
+- 'Main.py': Load datasets, preprocess data; Build, train and evaluate MLP and CNN
+- 'Model.py': Implementation of the models; Script for the MLP class and the CNN class
+- 'Layer.py': Implementation of the layers for MLP and CNNs
 
 ### Class-Diagram
 Here you can see the conceptual class diagram of the project:
@@ -39,8 +39,8 @@ If you want to take a look at a class diagram which gives you more information o
 For this project I didn´t make a documentation with a program like Doxygen or Sphinx. But I have made many commentaries throughout the whole code. That means that you can find commentaries in the code which explain the functions, classes and variables I have written.
 
 ### Tuneable Hyperparamters
-When you initialize your neural network you can choose between different tuneable hyperparameters. Down below you can find a list of the hyperparameters that I have already implemented for the Neural Network and the Convolutional Neural Network class.\
-**Neural Network (Multilayer Perceptron):**
+When you initialize your neural network you can choose between different tuneable hyperparameters. Down below you can find a list of the hyperparameters that I have already implemented for the Multilayer Perceptron and the Convolutional Neural Network class.\
+**Multilayer Perceptron:**
 - Network structure
 - Number of neurons
 - Activation functions (ReLU, Leaky ReLU, tanh, Sigmoid, Softmax)
